@@ -3,7 +3,7 @@ Bouffalolab lhal & rfparam & soc drivers
 
 |   Driver      |  commit  |
 |:-------------:|:--------:|
-|lhal           |  9b2d09a9a17dbb33283a924ed2810bf130fa0b69 |
+|lhal           |  23049296e2484f64f84cc007b43502c337dd42ed |
 |rfparam        |  946c59b3593098f8b957cc2c194341152dcf432b |
 |soc/bl602/std  |  bd001571d96e399cac9b2849dabf2c3da8c904d7 |
 |soc/bl702/std  |  867ba402eaedb22a1f8a0820eda26215cfe3b8a5 |
