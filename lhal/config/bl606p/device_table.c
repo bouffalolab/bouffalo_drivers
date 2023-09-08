@@ -1,15 +1,15 @@
 #include "bflb_core.h"
-#include "bl808_memorymap.h"
-#include "bl808_irq.h"
+#include "bl606p_memorymap.h"
+#include "bl606p_irq.h"
 
 #define DMA_CHANNEL_OFFSET 0x100
 
 #ifndef BFLB_BOOT2
-struct bflb_device_s bl808_device_table[] = {
+struct bflb_device_s bl606p_device_table[] = {
     { .name = "adc",
       .reg_base = AON_BASE,
 #if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_GPADC_DMA,
+      .irq_num = BL606P_IRQ_GPADC_DMA,
 #else
       .irq_num = 0xff,
 #endif
@@ -34,7 +34,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "gpio",
       .reg_base = GLB_BASE,
 #if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_GPIO_INT0,
+      .irq_num = BL606P_IRQ_GPIO_INT0,
 #else
       .irq_num = 0xff,
 #endif
@@ -45,7 +45,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "uart0",
       .reg_base = UART0_BASE,
 #if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_UART0,
+      .irq_num = BL606P_IRQ_UART0,
 #else
       .irq_num = 0xff,
 #endif
@@ -55,7 +55,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "uart1",
       .reg_base = UART1_BASE,
 #if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_UART1,
+      .irq_num = BL606P_IRQ_UART1,
 #else
       .irq_num = 0xff,
 #endif
@@ -65,7 +65,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "uart2",
       .reg_base = UART2_BASE,
 #if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_UART2,
+      .irq_num = BL606P_IRQ_UART2,
 #else
       .irq_num = 0xff,
 #endif
@@ -77,7 +77,7 @@ struct bflb_device_s bl808_device_table[] = {
 #if defined(CPU_M0) || defined(CPU_LP)
       .irq_num = 0xff,
 #else
-      .irq_num = BL808_IRQ_UART3,
+      .irq_num = BL606P_IRQ_UART3,
 #endif
       .idx = 3,
       .dev_type = BFLB_DEVICE_TYPE_UART,
@@ -85,7 +85,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "spi0",
       .reg_base = SPI0_BASE,
 #if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_SPI0,
+      .irq_num = BL606P_IRQ_SPI0,
 #else
       .irq_num = 0xff,
 #endif
@@ -95,7 +95,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "pwm_v2_0",
       .reg_base = PWM_BASE,
 #if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_PWM,
+      .irq_num = BL606P_IRQ_PWM,
 #else
       .irq_num = 0xff,
 #endif
@@ -106,7 +106,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "dma0_ch0",
       .reg_base = DMA0_BASE + 1 * DMA_CHANNEL_OFFSET,
 #if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_DMA0_ALL,
+      .irq_num = BL606P_IRQ_DMA0_ALL,
 #else
       .irq_num = 0xff,
 #endif
@@ -117,7 +117,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "dma0_ch1",
       .reg_base = DMA0_BASE + 2 * DMA_CHANNEL_OFFSET,
 #if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_DMA0_ALL,
+      .irq_num = BL606P_IRQ_DMA0_ALL,
 #else
       .irq_num = 0xff,
 #endif
@@ -128,7 +128,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "dma0_ch2",
       .reg_base = DMA0_BASE + 3 * DMA_CHANNEL_OFFSET,
 #if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_DMA0_ALL,
+      .irq_num = BL606P_IRQ_DMA0_ALL,
 #else
       .irq_num = 0xff,
 #endif
@@ -139,7 +139,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "dma0_ch3",
       .reg_base = DMA0_BASE + 4 * DMA_CHANNEL_OFFSET,
 #if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_DMA0_ALL,
+      .irq_num = BL606P_IRQ_DMA0_ALL,
 #else
       .irq_num = 0xff,
 #endif
@@ -150,7 +150,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "dma0_ch4",
       .reg_base = DMA0_BASE + 5 * DMA_CHANNEL_OFFSET,
 #if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_DMA0_ALL,
+      .irq_num = BL606P_IRQ_DMA0_ALL,
 #else
       .irq_num = 0xff,
 #endif
@@ -161,7 +161,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "dma0_ch5",
       .reg_base = DMA0_BASE + 6 * DMA_CHANNEL_OFFSET,
 #if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_DMA0_ALL,
+      .irq_num = BL606P_IRQ_DMA0_ALL,
 #else
       .irq_num = 0xff,
 #endif
@@ -172,7 +172,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "dma0_ch6",
       .reg_base = DMA0_BASE + 7 * DMA_CHANNEL_OFFSET,
 #if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_DMA0_ALL,
+      .irq_num = BL606P_IRQ_DMA0_ALL,
 #else
       .irq_num = 0xff,
 #endif
@@ -183,7 +183,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "dma0_ch7",
       .reg_base = DMA0_BASE + 8 * DMA_CHANNEL_OFFSET,
 #if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_DMA0_ALL,
+      .irq_num = BL606P_IRQ_DMA0_ALL,
 #else
       .irq_num = 0xff,
 #endif
@@ -194,7 +194,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "i2c0",
       .reg_base = I2C0_BASE,
 #if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_I2C0,
+      .irq_num = BL606P_IRQ_I2C0,
 #else
       .irq_num = 0xff,
 #endif
@@ -205,7 +205,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "timer0",
       .reg_base = TIMER0_BASE,
 #if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_TIMER0,
+      .irq_num = BL606P_IRQ_TIMER0,
 #else
       .irq_num = 0xff,
 #endif
@@ -216,7 +216,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "timer1",
       .reg_base = TIMER1_BASE,
 #if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_TIMER1,
+      .irq_num = BL606P_IRQ_TIMER1,
 #else
       .irq_num = 0xff,
 #endif
@@ -227,7 +227,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "rtc",
       .reg_base = HBN_BASE,
 #if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_HBN_OUT0,
+      .irq_num = BL606P_IRQ_HBN_OUT0,
 #else
       .irq_num = 0xff,
 #endif
@@ -266,7 +266,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "emac0",
       .reg_base = EMAC_BASE,
 #if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_EMAC,
+      .irq_num = BL606P_IRQ_EMAC,
 #else
       .irq_num = 0xff,
 #endif
@@ -277,7 +277,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "irtx",
       .reg_base = IR_BASE,
 #if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_IRTX,
+      .irq_num = BL606P_IRQ_IRTX,
 #else
       .irq_num = 0xff,
 #endif
@@ -288,7 +288,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "irrx",
       .reg_base = IR_BASE,
 #if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_IRRX,
+      .irq_num = BL606P_IRQ_IRRX,
 #else
       .irq_num = 0xff,
 #endif
@@ -308,7 +308,7 @@ struct bflb_device_s bl808_device_table[] = {
 #if defined(CPU_M0) || defined(CPU_LP)
       .irq_num = 0xff,
 #else
-      .irq_num = BL808_IRQ_MJPEG,
+      .irq_num = BL606P_IRQ_MJPEG,
 #endif
       .idx = 0,
       .sub_idx = 0,
@@ -317,7 +317,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "watchdog",
       .reg_base = TIMER0_BASE,
 #if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_WDT,
+      .irq_num = BL606P_IRQ_WDT,
 #else
       .irq_num = 0xff,
 #endif
@@ -328,7 +328,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "cam0",
       .reg_base = DVP0_BASE,
 #if defined(CPU_D0)
-      .irq_num = BL808_IRQ_DVP2BUS_INT0,
+      .irq_num = BL606P_IRQ_DVP2BUS_INT0,
 #else
       .irq_num = 0xff,
 #endif
@@ -339,7 +339,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "cam1",
       .reg_base = DVP1_BASE,
 #if defined(CPU_D0)
-      .irq_num = BL808_IRQ_DVP2BUS_INT1,
+      .irq_num = BL606P_IRQ_DVP2BUS_INT1,
 #else
       .irq_num = 0xff,
 #endif
@@ -350,7 +350,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "cam2",
       .reg_base = DVP2_BASE,
 #if defined(CPU_D0)
-      .irq_num = BL808_IRQ_DVP2BUS_INT2,
+      .irq_num = BL606P_IRQ_DVP2BUS_INT2,
 #else
       .irq_num = 0xff,
 #endif
@@ -361,7 +361,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "cam3",
       .reg_base = DVP3_BASE,
 #if defined(CPU_D0)
-      .irq_num = BL808_IRQ_DVP2BUS_INT3,
+      .irq_num = BL606P_IRQ_DVP2BUS_INT3,
 #else
       .irq_num = 0xff,
 #endif
@@ -372,7 +372,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "cam4",
       .reg_base = DVP4_BASE,
 #if defined(CPU_D0)
-      .irq_num = BL808_IRQ_DVP2BUS_INT4,
+      .irq_num = BL606P_IRQ_DVP2BUS_INT4,
 #else
       .irq_num = 0xff,
 #endif
@@ -383,7 +383,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "cam5",
       .reg_base = DVP5_BASE,
 #if defined(CPU_D0)
-      .irq_num = BL808_IRQ_DVP2BUS_INT5,
+      .irq_num = BL606P_IRQ_DVP2BUS_INT5,
 #else
       .irq_num = 0xff,
 #endif
@@ -394,7 +394,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "cam6",
       .reg_base = DVP6_BASE,
 #if defined(CPU_D0)
-      .irq_num = BL808_IRQ_DVP2BUS_INT6,
+      .irq_num = BL606P_IRQ_DVP2BUS_INT6,
 #else
       .irq_num = 0xff,
 #endif
@@ -405,7 +405,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "cam7",
       .reg_base = DVP7_BASE,
 #if defined(CPU_D0)
-      .irq_num = BL808_IRQ_DVP2BUS_INT7,
+      .irq_num = BL606P_IRQ_DVP2BUS_INT7,
 #else
       .irq_num = 0xff,
 #endif
@@ -416,7 +416,7 @@ struct bflb_device_s bl808_device_table[] = {
     { .name = "csi",
       .reg_base = CSI_BASE,
 #if defined(CPU_D0)
-      .irq_num = BL808_IRQ_MIPI_CSI,
+      .irq_num = BL606P_IRQ_MIPI_CSI,
 #else
       .irq_num = 0xff,
 #endif
@@ -424,20 +424,9 @@ struct bflb_device_s bl808_device_table[] = {
       .sub_idx = 0,
       .dev_type = BFLB_DEVICE_TYPE_CSI,
       .user_data = NULL },
-    { .name = "wo",
-      .reg_base = GLB_BASE,
-#if defined(CPU_M0) || defined(CPU_LP)
-      .irq_num = BL808_IRQ_GPIO_DMA,
-#else
-      .irq_num = 0xff,
-#endif
-      .idx = 0,
-      .sub_idx = 0,
-      .dev_type = BFLB_DEVICE_TYPE_WO,
-      .user_data = NULL },
 };
 #else
-struct bflb_device_s bl808_device_table[] = {
+struct bflb_device_s bl606p_device_table[] = {
     { .name = "ef_ctrl",
       .reg_base = EF_CTRL_BASE,
       .irq_num = 0xff,
@@ -447,39 +436,39 @@ struct bflb_device_s bl808_device_table[] = {
       .user_data = NULL },
     { .name = "gpio",
       .reg_base = GLB_BASE,
-      .irq_num = BL808_IRQ_GPIO_INT0,
+      .irq_num = BL606P_IRQ_GPIO_INT0,
       .idx = 0,
       .sub_idx = 0,
       .dev_type = BFLB_DEVICE_TYPE_GPIO,
       .user_data = NULL },
     { .name = "uart0",
       .reg_base = UART0_BASE,
-      .irq_num = BL808_IRQ_UART0,
+      .irq_num = BL606P_IRQ_UART0,
       .idx = 0,
       .dev_type = BFLB_DEVICE_TYPE_UART,
       .user_data = NULL },
     { .name = "uart1",
       .reg_base = UART1_BASE,
-      .irq_num = BL808_IRQ_UART1,
+      .irq_num = BL606P_IRQ_UART1,
       .idx = 1,
       .dev_type = BFLB_DEVICE_TYPE_UART,
       .user_data = NULL },
     { .name = "uart2",
       .reg_base = UART2_BASE,
-      .irq_num = BL808_IRQ_UART2,
+      .irq_num = BL606P_IRQ_UART2,
       .idx = 2,
       .dev_type = BFLB_DEVICE_TYPE_UART,
       .user_data = NULL },
       { .name = "timer0",
       .reg_base = TIMER0_BASE,
-      .irq_num = BL808_IRQ_TIMER0,
+      .irq_num = BL606P_IRQ_TIMER0,
       .idx = 0,
       .sub_idx = 0,
       .dev_type = BFLB_DEVICE_TYPE_TIMER,
       .user_data = NULL },
     { .name = "timer1",
       .reg_base = TIMER1_BASE,
-      .irq_num = BL808_IRQ_TIMER1,
+      .irq_num = BL606P_IRQ_TIMER1,
       .idx = 1,
       .sub_idx = 0,
       .dev_type = BFLB_DEVICE_TYPE_TIMER,
@@ -517,9 +506,9 @@ struct bflb_device_s bl808_device_table[] = {
 
 struct bflb_device_s *bflb_device_get_by_name(const char *name)
 {
-    for (uint8_t i = 0; i < sizeof(bl808_device_table) / sizeof(bl808_device_table[0]); i++) {
-        if (strcmp(bl808_device_table[i].name, name) == 0) {
-            return &bl808_device_table[i];
+    for (uint8_t i = 0; i < sizeof(bl606p_device_table) / sizeof(bl606p_device_table[0]); i++) {
+        if (strcmp(bl606p_device_table[i].name, name) == 0) {
+            return &bl606p_device_table[i];
         }
     }
     return NULL;
@@ -527,9 +516,9 @@ struct bflb_device_s *bflb_device_get_by_name(const char *name)
 
 struct bflb_device_s *bflb_device_get_by_id(uint8_t type, uint8_t idx)
 {
-    for (uint8_t i = 0; i < sizeof(bl808_device_table) / sizeof(bl808_device_table[0]); i++) {
-        if ((bl808_device_table[i].dev_type == type) && (bl808_device_table[i].idx = idx)) {
-            return &bl808_device_table[i];
+    for (uint8_t i = 0; i < sizeof(bl606p_device_table) / sizeof(bl606p_device_table[0]); i++) {
+        if ((bl606p_device_table[i].dev_type == type) && (bl606p_device_table[i].idx = idx)) {
+            return &bl606p_device_table[i];
         }
     }
     return NULL;

@@ -101,7 +101,7 @@ static intCallback_Type *pdsIntCbfArra[PDS_INT_MAX] = { NULL };
  * @note   Pu and Pd not depend on IE
  *
 *******************************************************************************/
-BL_Err_Type ATTR_TCM_SECTION PDS_Set_GPIO_Pad_Pn_Pu_Pd_Ie(PDS_GPIO_GROUP_SET_Type grp, uint8_t pu, uint8_t pd, uint8_t ie)
+BL_Err_Type ATTR_TCM_SECTION PDS_Set_GPIO_Pad_Pn_Pu_Pd_Ie(uint8_t grp, uint8_t pu, uint8_t pd, uint8_t ie)
 {
     uint32_t tmpVal;
     uint32_t tmpValPu;
@@ -184,7 +184,7 @@ BL_Err_Type ATTR_TCM_SECTION PDS_Set_GPIO_Pad_IntMask(GLB_GPIO_Type pad, BL_Mask
  * @return SUCCESS or ERROR
  *
 *******************************************************************************/
-BL_Err_Type ATTR_TCM_SECTION PDS_Set_GPIO_Pad_IntMode(PDS_GPIO_INT_SET_Type set, PDS_GPIO_INT_TRIG_Type trig)
+BL_Err_Type ATTR_TCM_SECTION PDS_Set_GPIO_Pad_IntMode(uint8_t set, uint8_t trig)
 {
     uint32_t tmpVal = 0;
 
@@ -221,7 +221,7 @@ BL_Err_Type ATTR_TCM_SECTION PDS_Set_GPIO_Pad_IntMode(PDS_GPIO_INT_SET_Type set,
  * @return SUCCESS or ERROR
  *
 *******************************************************************************/
-BL_Err_Type ATTR_TCM_SECTION PDS_Set_GPIO_Pad_IntClr(PDS_GPIO_INT_SET_Type set)
+BL_Err_Type ATTR_TCM_SECTION PDS_Set_GPIO_Pad_IntClr(uint8_t set)
 {
     uint32_t tmpVal = 0;
 
@@ -323,7 +323,7 @@ BL_Sts_Type ATTR_TCM_SECTION PDS_Get_GPIO_Pad_IntStatus(GLB_GPIO_Type pad)
  * @return SUCCESS or ERROR
  *
 *******************************************************************************/
-BL_Err_Type ATTR_TCM_SECTION PDS_Set_Flash_Pad_Pull_None(SF_Ctrl_Pin_Select pinCfg)
+BL_Err_Type ATTR_TCM_SECTION PDS_Set_Flash_Pad_Pull_None(uint8_t pinCfg)
 {
     if (pinCfg >= SF_IO_EXT_SF2_SWAP_IO3IO0) {
         PDS_Set_GPIO_Pad_Pn_Pu_Pd_Ie(PDS_GPIO_GROUP_SET_GPIO0_GPIO15, 0, 0, 0);
@@ -343,7 +343,7 @@ BL_Err_Type ATTR_TCM_SECTION PDS_Set_Flash_Pad_Pull_None(SF_Ctrl_Pin_Select pinC
  *
  * @note ext_flash need call this function after pds mode
 *******************************************************************************/
-BL_Err_Type ATTR_TCM_SECTION PDS_Set_Flash_Pad_Pull_None_Fast(SF_Ctrl_Pin_Select pinCfg)
+BL_Err_Type ATTR_TCM_SECTION PDS_Set_Flash_Pad_Pull_None_Fast(uint8_t pinCfg)
 {
     uint32_t tmpVal;
 
@@ -590,7 +590,7 @@ BL_Err_Type ATTR_TCM_SECTION PDS_Default_Level_Config(PDS_DEFAULT_LV_CFG_Type *d
  * @return SUCCESS or ERROR
  *
 *******************************************************************************/
-BL_Err_Type PDS_IntMask(PDS_INT_Type intType, BL_Mask_Type intMask)
+BL_Err_Type PDS_IntMask(uint8_t intType, BL_Mask_Type intMask)
 {
     uint32_t tmpVal = 0;
 
@@ -613,7 +613,7 @@ BL_Err_Type PDS_IntMask(PDS_INT_Type intType, BL_Mask_Type intMask)
  * @return SET or RESET
  *
 *******************************************************************************/
-BL_Sts_Type PDS_Get_IntStatus(PDS_INT_Type intType)
+BL_Sts_Type PDS_Get_IntStatus(uint8_t intType)
 {
     return (BL_RD_REG(PDS_BASE, PDS_INT) & (1 << intType)) ? SET : RESET;
 }
@@ -655,7 +655,7 @@ BL_Err_Type ATTR_TCM_SECTION PDS_IntClear(void)
  *
 *******************************************************************************/
 #ifndef BFLB_USE_HAL_DRIVER
-BL_Err_Type PDS_Int_Callback_Install(PDS_INT_Type intType, intCallback_Type *cbFun)
+BL_Err_Type PDS_Int_Callback_Install(uint8_t intType, intCallback_Type *cbFun)
 {
 #ifndef BFLB_USE_HAL_DRIVER
     Interrupt_Handler_Register(PDS_WAKEUP_IRQn, PDS_WAKEUP_IRQHandler);
@@ -677,18 +677,20 @@ BL_Err_Type PDS_Int_Callback_Install(PDS_INT_Type intType, intCallback_Type *cbF
 *******************************************************************************/
 BL_Err_Type ATTR_CLOCK_SECTION PDS_Trim_RC32M(void)
 {
-    Efuse_Ana_RC32M_Trim_Type trim;
+    bflb_ef_ctrl_com_trim_t trim;
     int32_t tmpVal = 0;
+    struct bflb_device_s *ef_ctrl;
 
-    EF_Ctrl_Read_RC32M_Trim(&trim);
-    if (trim.rc32mCodeFrExt2En) {
-        if (trim.rc32mCodeFrExt2Parity == EF_Ctrl_Get_Trim_Parity(trim.rc32mCodeFrExt2, 8)) {
+    ef_ctrl = bflb_device_get_by_name("ef_ctrl");
+    bflb_ef_ctrl_read_common_trim(ef_ctrl, "rc32m", &trim, 1);
+    if (trim.en) {
+        if (trim.parity == bflb_ef_ctrl_get_trim_parity(trim.value, 8)) {
             tmpVal = BL_RD_REG(PDS_BASE, PDS_RC32M_CTRL0);
             tmpVal = BL_SET_REG_BIT(tmpVal, PDS_RC32M_EXT_CODE_EN);
             BL_WR_REG(PDS_BASE, PDS_RC32M_CTRL0, tmpVal);
             arch_delay_us(2);
             tmpVal = BL_RD_REG(PDS_BASE, PDS_RC32M_CTRL2);
-            tmpVal = BL_SET_REG_BITS_VAL(tmpVal, PDS_RC32M_CODE_FR_EXT2, trim.rc32mCodeFrExt2);
+            tmpVal = BL_SET_REG_BITS_VAL(tmpVal, PDS_RC32M_CODE_FR_EXT2, trim.value);
             BL_WR_REG(PDS_BASE, PDS_RC32M_CTRL2, tmpVal);
             tmpVal = BL_RD_REG(PDS_BASE, PDS_RC32M_CTRL2);
             tmpVal = BL_SET_REG_BIT(tmpVal, PDS_RC32M_EXT_CODE_SEL);
@@ -899,7 +901,7 @@ BL_Err_Type PDS_Set_USB_Resume(void)
 #ifndef BFLB_USE_HAL_DRIVER
 void PDS_WAKEUP_IRQHandler(void)
 {
-    for (PDS_INT_Type intType = PDS_INT_WAKEUP; intType < PDS_INT_MAX; intType++) {
+    for (uint8_t intType = PDS_INT_WAKEUP; intType < PDS_INT_MAX; intType++) {
         if (PDS_Get_IntStatus(intType) && (pdsIntCbfArra[intType] != NULL)) {
             pdsIntCbfArra[intType]();
         }

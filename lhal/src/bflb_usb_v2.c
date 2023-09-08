@@ -3,6 +3,10 @@
 #include "usbh_core.h"
 #include "hardware/usb_v2_reg.h"
 
+#ifndef CONFIG_USB_EHCI_HCOR_RESERVED_DISABLE
+#error "usb host must enable CONFIG_USB_EHCI_HCOR_RESERVED_DISABLE"
+#endif
+
 /* select only one mode */
 // #define CONFIG_USB_PINGPONG_ENABLE
 // #define CONFIG_USB_TRIPLE_ENABLE
@@ -818,9 +822,9 @@ int usbd_ep_set_stall(const uint8_t ep)
     uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
     if (ep_idx == 0) {
-        regval = getreg32(BLFB_USB_BASE + USB_DEV_ADR_OFFSET);
+        regval = getreg32(BLFB_USB_BASE + USB_DEV_CXCFE_OFFSET);
         regval |= USB_CX_STL;
-        putreg32(regval, BLFB_USB_BASE + USB_DEV_ADR_OFFSET);
+        putreg32(regval, BLFB_USB_BASE + USB_DEV_CXCFE_OFFSET);
     } else {
         if (USB_EP_DIR_IS_OUT(ep)) {
             regval = getreg32(BLFB_USB_BASE + USB_DEV_OUTMPS1_OFFSET + (ep_idx - 1) * 4);
