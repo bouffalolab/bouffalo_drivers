@@ -63,8 +63,8 @@ extern "C" {
  */
 typedef struct
 {
-    BL_Fun_Type lowIntEn;  /*!< Low will trigger interrupt */
-    BL_Fun_Type highIntEn; /*!< High will trigger interrupt */
+    uint8_t lowIntEn;  /*!< Low will trigger interrupt */
+    uint8_t highIntEn; /*!< High will trigger interrupt */
 } HBN_PIR_INT_CFG_Type;
 
 /** @defgroup HBN PIR low pass filter type definition
@@ -407,15 +407,10 @@ typedef struct
 /** @defgroup  HBN_INT_TYPE
  *  @{
  */
-#define IS_HBN_INT_TYPE(type) (((type) == HBN_INT_GPIO9) ||  \
-                               ((type) == HBN_INT_GPIO10) || \
-                               ((type) == HBN_INT_GPIO11) || \
-                               ((type) == HBN_INT_GPIO12) || \
-                               ((type) == HBN_INT_GPIO13) || \
-                               ((type) == HBN_INT_GPIO14) || \
-                               ((type) == HBN_INT_GPIO15) || \
-                               ((type) == HBN_INT_GPIO40) || \
-                               ((type) == HBN_INT_GPIO41) || \
+#define IS_HBN_INT_TYPE(type) (((type) == HBN_INT_GPIO16) || \
+                               ((type) == HBN_INT_GPIO17) || \
+                               ((type) == HBN_INT_GPIO18) || \
+                               ((type) == HBN_INT_GPIO19) || \
                                ((type) == HBN_INT_RTC) ||    \
                                ((type) == HBN_INT_PIR) ||    \
                                ((type) == HBN_INT_BOD) ||    \

@@ -38,10 +38,6 @@
 #include "bflb_sf_cfg.h"
 #include "bflb_xip_sflash.h"
 
-/** @addtogroup  BL628_Peripheral_Driver
- *  @{
- */
-
 /** @addtogroup  SF_CFG
  *  @{
  */
@@ -189,7 +185,7 @@ static const ATTR_TCM_CONST_SECTION spi_flash_cfg_type flash_cfg_winb_16jv = {
 
     .qe_index = 1,
     .qe_bit = 0x01,
-    .qe_write_reg_len = 0x02, /*Q08BV,Q16DV: 0x02.Q32FW,Q32FV: 0x01 */
+    .qe_write_reg_len = 0x01, /*Q08BV,Q16DV: 0x02.Q32FW,Q32FV: 0x01 */
     .qe_read_reg_len = 0x1,
 
     .busy_index = 0,
@@ -200,7 +196,7 @@ static const ATTR_TCM_CONST_SECTION spi_flash_cfg_type flash_cfg_winb_16jv = {
     .read_reg_cmd[0] = 0x05,
     .read_reg_cmd[1] = 0x35,
     .write_reg_cmd[0] = 0x01,
-    .write_reg_cmd[1] = 0x01,
+    .write_reg_cmd[1] = 0x31,
 
     .fast_read_qio_cmd = 0xeb,
     .fr_qio_dmy_clk = 16 / 8,
@@ -2459,6 +2455,11 @@ static const ATTR_TCM_CONST_SECTION flash_info_t flash_infos[] = {
         .cfg = &flash_cfg_xtx,
     },
     {
+        .jedec_id = 0x15650b,
+        //.name="xt_25w08f_08_1833",
+        .cfg = &flash_cfg_winb_16jv,
+    },
+    {
         .jedec_id = 0x134068,
         //.name="boya_q04b_04_33",
         .cfg = &flash_cfg_boya40,
@@ -3733,5 +3734,3 @@ int ATTR_TCM_SECTION bflb_sf_cfg_sbus2_flash_init(uint8_t sel, const struct sf_c
 /*@} end of group SF_CFG_Public_Functions */
 
 /*@} end of group SF_CFG */
-
-/*@} end of group BL628_Peripheral_Driver */
