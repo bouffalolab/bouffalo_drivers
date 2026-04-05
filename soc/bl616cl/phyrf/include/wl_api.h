@@ -140,6 +140,7 @@ struct wl_efuse_t
     uint8_t     icx_code;
     uint8_t     dcdc_vout_trim_aon;
     int8_t      Temperature_MP; // temperature of sensor while power cal at production line
+    uint8_t     mjpeg_dec_dis; // 0: mjpeg decoder on; 1: disable mjpeg decoder;
 };
 
 struct wl_param_tcap_t
@@ -174,9 +175,10 @@ struct wl_env_t
 
 typedef enum
 {
-    WL_DEVICE_QFN40 = 0,
-    WL_DEVICE_QFN40M,
-    WL_DEVICE_QFN56
+    WL_DEVICE_QFN24 = 0,
+    WL_DEVICE_QFN32,
+    WL_DEVICE_QFN40,
+    WL_DEVICE_QFN48
 } wl_device_info_t;
 
 typedef enum
@@ -230,7 +232,7 @@ struct wl_cfg_t
     void (*log_printf)(const char *format, ...);
 
     uint8_t     log_level;
-    uint8_t     device_info; // QFN40,QFN40M,QFN56
+    uint8_t     device_info; // QFN24,QFN32,QFN40,QFN48
 };
 
 /**
@@ -335,6 +337,8 @@ void wl_rf_set_154_tx_power(uint32_t target_pwr_dbm);
 void wl_rf_cfg_init(void);//set default values to rf members of struct, //by Lx
 void wl_rf_set_channel_pwr_comp(uint8_t channel_idx);
 void wl_rf_set_bz_channel_pwr_comp(void);
+void wl_rf_set_status(uint8_t rf_en);// turn on/off rf domain
+void wl_rf_temp_optimize(int16_t temperature); // rf optimize for temperature
 /*
 * rf driver api end
 */

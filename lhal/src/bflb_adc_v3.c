@@ -956,6 +956,7 @@ void bflb_adc_parse_result(struct bflb_device_s *dev, uint32_t *buffer, struct b
     uint32_t resolution;
     uint32_t diff_mode;
     uint32_t neg;
+    int32_t border;
 
     reg_base = dev->reg_base;
 
@@ -970,7 +971,8 @@ void bflb_adc_parse_result(struct bflb_device_s *dev, uint32_t *buffer, struct b
             result[i].pos_chan = (buffer[i] >> 20) & 0xF;
             result[i].neg_chan = (buffer[i] >> 16) & 0xF;
             conv_result = buffer[i] & 0xFFFF;
-            conv_result += offset[dev->idx] / 2;
+            border = conv_result - offset[dev->idx] * 2;
+            conv_result = (border < 0) ? 0 : ((border > 0xFFFF) ? 0xFFFF : border);
             conv_result /= coe[dev->idx];
             conv_result = (conv_result > 0xFFFF) ? 0xFFFF : conv_result;
             if (resolution == ADC_RESOLUTION_12B) {
@@ -1005,7 +1007,8 @@ void bflb_adc_parse_result(struct bflb_device_s *dev, uint32_t *buffer, struct b
             }
 
             conv_result = conv_result & 0xFFFF;
-            conv_result += offset[dev->idx];
+            border = conv_result - offset[dev->idx];
+            conv_result = (border < 0) ? 0 : ((border > 0xFFFF) ? 0xFFFF : border);
             conv_result /= coe[dev->idx];
             conv_result = (conv_result > 0x7FFF) ? 0x7FFF : conv_result;
             if (resolution == ADC_RESOLUTION_12B) {

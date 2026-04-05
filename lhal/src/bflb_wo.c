@@ -29,6 +29,35 @@ void bflb_wo_pin_init(struct bflb_device_s *dev, uint8_t pin, uint8_t mode)
 #endif
 }
 
+void bflb_wo_set_clk_div(struct bflb_device_s *dev, uint16_t clk_div)
+{
+#if defined(BL616CL)
+    uint32_t reg_base;
+    uint32_t regval;
+    uint32_t div_max;
+    uint32_t div;
+
+    div = clk_div;
+    if (div == 0) {
+        div = 1;
+    }
+
+    div_max = (GLB_CR_IO_TOG_CNT_DIV_VAL_MASK >> GLB_CR_IO_TOG_CNT_DIV_VAL_SHIFT);
+    if (div > div_max) {
+        div = div_max;
+    }
+
+    reg_base = dev->reg_base;
+    regval = getreg32(reg_base + GLB_GPIO_CFG145_OFFSET);
+    regval &= ~GLB_CR_IO_TOG_CNT_DIV_VAL_MASK;
+    regval |= (div << GLB_CR_IO_TOG_CNT_DIV_VAL_SHIFT) & GLB_CR_IO_TOG_CNT_DIV_VAL_MASK;
+    putreg32(regval, reg_base + GLB_GPIO_CFG145_OFFSET);
+#else
+    (void)dev;
+    (void)clk_div;
+#endif
+}
+
 void bflb_wo_init(struct bflb_device_s *dev, struct bflb_wo_cfg_s *cfg)
 {
 #ifdef romapi_bflb_wo_init
@@ -47,7 +76,7 @@ void bflb_wo_init(struct bflb_device_s *dev, struct bflb_wo_cfg_s *cfg)
     /* config divider */
     regval = getreg32(reg_base + GLB_GPIO_CFG145_OFFSET);
     regval &= ~GLB_CR_IO_TOG_CNT_DIV_VAL_MASK;
-    regval |= ((cfg->clk_div << GLB_CR_IO_TOG_CNT_DIV_VAL_SHIFT) & GLB_CR_IO_TOG_CNT_DIV_VAL_MASK);
+    regval |= (1 << GLB_CR_IO_TOG_CNT_DIV_VAL_SHIFT) & GLB_CR_IO_TOG_CNT_DIV_VAL_MASK;
     putreg32(regval, reg_base + GLB_GPIO_CFG145_OFFSET);
 #endif
 
@@ -318,9 +347,6 @@ void bflb_wo_uart_init(struct bflb_device_s *dev, uint32_t baudrate, uint8_t pin
 {
     struct bflb_wo_cfg_s cfg;
 
-#if defined(BL616CL)
-    cfg.clk_div = 1;
-#endif
     if (baudrate == 0) {
         baudrate = 2 * 1000 * 1000;
     }
@@ -337,8 +363,8 @@ void bflb_wo_uart_init(struct bflb_device_s *dev, uint32_t baudrate, uint8_t pin
     cfg.fifo_threshold = 64;
 #endif
     cfg.mode = WO_MODE_SET_CLR;
-    bflb_wo_pin_init(dev, pin, WO_MODE_SET_CLR);
     bflb_wo_init(dev, &cfg);
+    bflb_wo_pin_init(dev, pin, WO_MODE_SET_CLR);
     wo_uart_pin = pin;
     wo_uart_pin_high = (1 << (wo_uart_pin & 7));
     wo_uart_pin_low = (wo_uart_pin_high << 8);

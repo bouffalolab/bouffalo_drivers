@@ -448,6 +448,7 @@ int bl_lp_get_32k_clock_ready(void);
 int bl_lp_set_32k_trim_ready(uint8_t ready_val);
 int bl_lp_get_32k_trim_ready(void);
 int bl_lp_get_bcn_delay_ready(void);
+void bl_lp_rc32k_save_code(uint32_t code);
 
 int bl_lp_beacon_interval_update(uint16_t beacon_interval_tu);
 int bl_lp_beacon_tim_update(uint8_t *tim, uint8_t mode);

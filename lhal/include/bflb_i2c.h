@@ -42,12 +42,15 @@
  *   included in the msg[n] flags
  */
 
-#define I2C_M_WRITE   0x0000 /* Write data, from master to slave */
-#define I2C_M_READ    0x0001 /* Read data, from slave to master */
-#define I2C_M_TEN     0x0002 /* Ten bit address */
-#define I2C_M_DMA     0x0004 /* Enable dma mode */
-#define I2C_M_NOSTOP  0x0040 /* Message should not end with a STOP */
-#define I2C_M_NOSTART 0x0080 /* Message should not begin with a START */
+#define I2C_M_WRITE 0x0000 /* Write data, from master to slave */
+#define I2C_M_READ  0x0001 /* Read data, from slave to master */
+#define I2C_M_TEN   0x0002 /* Ten bit address */
+#define I2C_M_DMA   0x0004 /* Enable dma mode */
+#if defined(BL616CL)
+#define I2C_M_RESTART 0x0010 /* Repeated start follows this message */
+#endif
+#define I2C_M_NOSTOP       0x0040 /* Message should not end with a STOP */
+#define I2C_M_NOSTART      0x0080 /* Message should not begin with a START */
 
 /** @defgroup I2C_INTSTS i2c interrupt status definition
   * @{
@@ -59,7 +62,8 @@
 #define I2C_INTSTS_ARB     (1 << 4) /* Arbitration lost interrupt */
 #define I2C_INTSTS_FER     (1 << 5) /* TX/RX FIFO error interrupt */
 #if defined(BL616CL)
-#define I2C_INTSTS_TIMEOUT (1 << 6) /* Timeout interrupt */
+#define I2C_INTSTS_TIMEOUT (1 << 6)  /* Master timeout interrupt */
+#define I2C_INTSTS_RESTART (1 << 22) /* Repeated start interrupt */
 #endif
 /**
  * @}
@@ -69,11 +73,12 @@
   * @{
   */
 #define I2C_INTCLR_END  (1 << 0) /* Transfer end interrupt */
-#if defined(BL616CL)
-#define I2C_INTCLR_TIMEOUT (1 << 2) /* Timeout interrupt */
-#endif
 #define I2C_INTCLR_NACK (1 << 3) /* NACK interrupt */
 #define I2C_INTCLR_ARB  (1 << 4) /* Arbitration lost interrupt */
+#if defined(BL616CL)
+#define I2C_INTCLR_TIMEOUT (1 << 2)  /* Master timeout interrupt */
+#define I2C_INTCLR_RESTART (1 << 15) /* Repeated start interrupt */
+#endif
 /**
  * @}
  */
@@ -88,7 +93,8 @@
 #define I2C_INTEN_ARB     (1 << 4) /* Arbitration lost interrupt */
 #define I2C_INTEN_FER     (1 << 5) /* TX/RX FIFO error interrupt */
 #if defined(BL616CL)
-#define I2C_INTEN_TIMEOUT (1 << 6) /* Timeout interrupt */
+#define I2C_INTEN_TIMEOUT (1 << 6)  /* Master timeout interrupt */
+#define I2C_INTEN_RESTART (1 << 31) /* Repeated start interrupt */
 #endif
 /**
  * @}

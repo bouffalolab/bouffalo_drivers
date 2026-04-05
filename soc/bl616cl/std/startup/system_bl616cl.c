@@ -108,7 +108,7 @@ static void flash_bank2_access_init(void)
 void SystemInit(void)
 {
     uint32_t i = 0;
-
+    uint32_t tmpVal = 0;
     /* CPU Prefetching barrier */
     if (BL616CL_PSRAM_INIT_DONE == 0) {
         Tzc_Sec_PSRAMB_Access_Set_Not_Lock(0, 0x0, 64 * 1024 * 1024, 0);
@@ -169,12 +169,16 @@ void SystemInit(void)
     BL_WR_REG(GLB_BASE, GLB_UART_CFG1, 0xffffffff);
     BL_WR_REG(GLB_BASE, GLB_UART_CFG2, 0x0000ffff);
 
+    /* fix GPIO5 uncommon behaviour due to HBN，change bit16 from 1 to 0*/
+    tmpVal = *(volatile uint32_t *)0x2000f014;
+    tmpVal &= ~(1 << 16U);
+    *(volatile uint32_t *)0x2000f014 = tmpVal;
+
     extern uint8_t __LD_CONFIG_EM_SEL;
     volatile uint32_t em_size;
 
     em_size = (uint32_t)&__LD_CONFIG_EM_SEL;
 
-    uint32_t tmpVal = 0;
     tmpVal = BL_RD_REG(GLB_BASE, GLB_SRAM_CFG3);
 
     if (em_size == 0) {

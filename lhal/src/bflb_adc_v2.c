@@ -7,11 +7,8 @@
 
 volatile float coe;
 volatile int32_t offset;
-#if defined(BL616CL_VERSION_A0)
-volatile uint32_t tsen_offset = 1500;
-#else
 volatile uint32_t tsen_offset;
-#endif
+
 volatile int adc_reference_channel = -1;
 
 void bflb_adc_init(struct bflb_device_s *dev, const struct bflb_adc_config_s *config)
@@ -73,11 +70,9 @@ void bflb_adc_init(struct bflb_device_s *dev, const struct bflb_adc_config_s *co
         regval &= ~GLB_GPADC1_DIFF_MODE;
         regval |= GLB_GPADC1_NEG_GND;
     }
-#if defined(BL616CL_VERSION_A0)
-    if (config->vref == ADC_VREF_INTERNAL_1P25) {
-#else
+
     if (config->vref == ADC_VREF_EXTERNAL_1P25) {
-#endif
+
         regval |= GLB_GPADC1_VREF_EX_SEL;
     }
     putreg32(regval, reg_base + GLB_GPADC1_REG_CONFIG1_OFFSET);
@@ -690,6 +685,7 @@ void bflb_adc_parse_result(struct bflb_device_s *dev, uint32_t *buffer, struct b
     uint32_t resolution;
     uint32_t diff_mode;
     uint32_t neg;
+    int32_t border;
 
     reg_base = dev->reg_base;
 
@@ -702,7 +698,8 @@ void bflb_adc_parse_result(struct bflb_device_s *dev, uint32_t *buffer, struct b
             result[i].pos_chan = (buffer[i] >> 21) & 0x1F;
             result[i].neg_chan = (buffer[i] >> 16) & 0x1F;
             conv_result = buffer[i] & 0xFFFF;
-            conv_result += offset / 2;
+            border = conv_result - offset * 2;
+            conv_result = (border < 0) ? 0 : ((border > 0xFFFF) ? 0xFFFF : border);
             conv_result /= coe;
             conv_result = (conv_result > 0xFFFF) ? 0xFFFF : conv_result;
             if (resolution == ADC_RESOLUTION_12B) {
@@ -735,7 +732,8 @@ void bflb_adc_parse_result(struct bflb_device_s *dev, uint32_t *buffer, struct b
             }
 
             conv_result = conv_result & 0xFFFF;
-            conv_result += offset;
+            border = conv_result - offset;
+            conv_result = (border < 0) ? 0 : ((border > 0xFFFF) ? 0xFFFF : border);
             conv_result /= coe;
             conv_result = (conv_result > 0x7FFF) ? 0x7FFF : conv_result;
             if (resolution == ADC_RESOLUTION_12B) {

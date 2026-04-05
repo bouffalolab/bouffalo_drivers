@@ -129,7 +129,7 @@ void bl_lp_wifi_param_update(bl_lp_fw_cfg_t *bl_lp_fw_cfg)
         iot2lp_para->wifi_parameter->wifi_rx_buff = (uint8_t *)((uint32_t)export_get_rx_buffer1_addr() & 0x2FFFFFFF);
 
         /* lpfw rx timeout */
-        iot2lp_para->mtimer_parameter->mtimer_timeout_en = 0;
+        iot2lp_para->mtimer_parameter->mtimer_timeout_en = 1;
         iot2lp_para->mtimer_parameter->mtimer_timeout_mini_us = bl_lp_fw_cfg->mtimer_timeout_mini_us;
         iot2lp_para->mtimer_parameter->mtimer_timeout_max_us = bl_lp_fw_cfg->mtimer_timeout_max_us;
 
@@ -137,7 +137,7 @@ void bl_lp_wifi_param_update(bl_lp_fw_cfg_t *bl_lp_fw_cfg)
         /* take rc32k error rate as default */
         if (!(*((volatile uint32_t *)0x2000f030) & (1 << 3))) {
             /* rc32k 1500-ppm */
-            iot2lp_para->rtc32k_jitter_error_ppm = 1200;
+            iot2lp_para->rtc32k_jitter_error_ppm = 600;
         } else {
             /* xtal 500-ppm */
             iot2lp_para->rtc32k_jitter_error_ppm = 400;
@@ -872,7 +872,7 @@ void bl_lp_fw_init(void)
     /* rc32k status: not ready */
     iot2lp_para->rc32k_trim_parameter->rc32k_clock_ready = 0;
     iot2lp_para->rc32k_trim_parameter->rc32k_trim_ready = 0;
-    iot2lp_para->rc32k_trim_parameter->rc32k_auto_cal_en = 0;
+    iot2lp_para->rc32k_trim_parameter->rc32k_auto_cal_en = 1;
 
     memset(&beacon_delay_info, 0, sizeof(beacon_delay_info));
     iot2lp_para->bcn_delay_info = &beacon_delay_info;
@@ -891,7 +891,7 @@ void bl_lp_fw_init(void)
     bl_lp_fw_bcn_loss_cfg_dtim_default(10 /*iot2lp_para->wifi_parameter->dtim_num*/);
 
     memset(&lp_fw_jtag_parameter, 0, sizeof(lp_fw_jtag_parameter));
-    lp_fw_jtag_parameter.jtag_en = 1;
+    lp_fw_jtag_parameter.jtag_en = 0;
     lp_fw_jtag_parameter.jtag_io[0] = 0;
     lp_fw_jtag_parameter.jtag_io[1] = 1;
     lp_fw_jtag_parameter.jtag_io[2] = 2;
@@ -899,7 +899,7 @@ void bl_lp_fw_init(void)
     iot2lp_para->jtag_parameter = &lp_fw_jtag_parameter;
 
     memset(&lp_fw_uart_cfg, 0, sizeof(lp_fw_uart_cfg));
-    lp_fw_uart_cfg.debug_log_en = 1;
+    lp_fw_uart_cfg.debug_log_en = 0;
     lp_fw_uart_cfg.uart_tx_io = 34;
     lp_fw_uart_cfg.uart_rx_io = 35;
     lp_fw_uart_cfg.baudrate = 2000000;
@@ -1047,6 +1047,64 @@ static uint32_t get_dtim_num(uint32_t period_dtim, uint32_t bcn_past_num, lp_fw_
     return dtim_num;
 }
 
+
+
+/* GPIO device for low power configuration */
+static struct bflb_device_s *gpio_lp = NULL;
+
+/* Check if the pin is flash IO */
+static int ATTR_TCM_SECTION is_flash_io(uint8_t pin, uint32_t sf_pin_select)
+{
+    if (sf_pin_select & (1 << 2)) {
+        /* Flash IO is GPIO 6-11 */
+        return (pin >= GPIO_PIN_6 && pin <= GPIO_PIN_11);
+    } else if (sf_pin_select & (1 << 3)) {
+        /* Flash IO is GPIO 24-29 */
+        return (pin >= GPIO_PIN_24 && pin <= GPIO_PIN_29);
+    }
+    return 0;
+}
+
+static int ATTR_TCM_SECTION is_psram_io(uint8_t pin)
+{
+    return (pin >= 46 && pin <= 57);
+}
+
+static int ATTR_TCM_SECTION is_uart_io(uint8_t pin)
+{
+    if (lp_fw_uart_cfg.debug_log_en == 1) {
+        return (pin == lp_fw_uart_cfg.uart_tx_io) || (pin == lp_fw_uart_cfg.uart_rx_io);
+    } else {
+        return 0;
+    }
+}
+/* Configure GPIO for PDS low power and enable keep */
+static void ATTR_TCM_SECTION pds_gpio_keep_enable(uint32_t sf_pin_select)
+{
+    if (gpio_lp == NULL) {
+        gpio_lp = bflb_device_get_by_name("gpio");
+    }
+    /* Configure all PDS GPIO (6-36) to analog + float mode, except flash IO */
+    /* Enable all PDS GPIO keep for low power consumption */
+    for (uint8_t i = GPIO_PIN_6; i < GPIO_PIN_MAX; i++) {
+        if (!is_flash_io(i, sf_pin_select) && !is_psram_io(i) && !is_uart_io(i)) {
+            bflb_gpio_init(gpio_lp, i, GPIO_ANALOG | GPIO_FLOAT | GPIO_DRV_0);
+            PDS_Enable_GPIO_Keep(i);
+        }
+    }
+}
+
+/* Get flash IO select from efuse */
+static uint32_t ATTR_TCM_SECTION get_sf_pin_select(void)
+{
+    uint32_t tmpVal;
+    /* Read from efuse sw usage 0 */
+    tmpVal = BL_RD_WORD(0x20056000 + 0x74);
+    return (tmpVal >> 5) & 0x3f;
+}
+
+
+
 int ATTR_TCM_SECTION bl_lp_fw_enter(bl_lp_fw_cfg_t *bl_lp_fw_cfg)
 {
     uint64_t rtc_sleep_us, rtc_wakeup_cmp_cnt;
@@ -1057,6 +1115,7 @@ int ATTR_TCM_SECTION bl_lp_fw_enter(bl_lp_fw_cfg_t *bl_lp_fw_cfg)
     uint32_t period_dtim;
     uint32_t bcn_loss_level;
     int32_t rtc32k_error_us;
+    uint32_t total_error;
 
     lp_fw_bcn_loss_level_t *bcn_loss_cfg = NULL;
 
@@ -1095,6 +1154,13 @@ int ATTR_TCM_SECTION bl_lp_fw_enter(bl_lp_fw_cfg_t *bl_lp_fw_cfg)
     }
 
     bl_lp_wifi_param_update(bl_lp_fw_cfg);
+
+
+    uint32_t sf_pin_select;
+
+    /* Get flash IO configuration and configure GPIO for low power */
+    sf_pin_select = get_sf_pin_select();
+    pds_gpio_keep_enable(sf_pin_select);
 
 
    /* ready sleep*/
@@ -1155,15 +1221,12 @@ int ATTR_TCM_SECTION bl_lp_fw_enter(bl_lp_fw_cfg_t *bl_lp_fw_cfg)
         bcn_past_num = (rtc_now_us - last_beacon_rtc_us + PROTECT_BF_MS * 1000) / beacon_interval_us;
         dtim_num = get_dtim_num(period_dtim, bcn_past_num, iot2lp_para->wifi_parameter);
 
-        // if (dtim_num <= 3) {
-        //     dtim_num += (4 - dtim_num);
-        // }
 
-        BL_LP_LOG("period_dtim:%d\r\n", period_dtim);
-        BL_LP_LOG("dtim_num:%d\r\n", dtim_num);
-        BL_LP_LOG("bcn_past_num:%d\r\n", bcn_past_num);
-        BL_LP_LOG("beacon_interval_us:%d\r\n", beacon_interval_us);
-        BL_LP_LOG("rc32k code %d\r\n", iot2lp_para->rc32k_trim_parameter->rc32k_fr_ext);
+        // BL_LP_LOG("period_dtim:%d\r\n", period_dtim);
+        // BL_LP_LOG("dtim_num:%d\r\n", dtim_num);
+        // BL_LP_LOG("bcn_past_num:%d\r\n", bcn_past_num);
+        // BL_LP_LOG("beacon_interval_us:%d\r\n", beacon_interval_us);
+        // BL_LP_LOG("rc32k code %d\r\n", iot2lp_para->rc32k_trim_parameter->rc32k_fr_ext);
         /* last bcn -> next bcn */
         pds_sleep_us = (dtim_num + bcn_past_num) * beacon_interval_us;
 
@@ -1174,10 +1237,6 @@ int ATTR_TCM_SECTION bl_lp_fw_enter(bl_lp_fw_cfg_t *bl_lp_fw_cfg)
         /* now -> next bcn */
         pds_sleep_us = pds_sleep_us - (uint32_t)(rtc_now_us - last_beacon_rtc_us);
 
-        /* phy init time */
-        // pds_sleep_us -= 280000;
-        // pds_sleep_us -= 500;
-
         /* rc32k error */
         if (rtc32k_error_us > 0 || pds_sleep_us > (-rtc32k_error_us)) {
             pds_sleep_us += rtc32k_error_us;
@@ -1187,6 +1246,36 @@ int ATTR_TCM_SECTION bl_lp_fw_enter(bl_lp_fw_cfg_t *bl_lp_fw_cfg)
     } else {
         pds_sleep_us = 0;
     }
+
+    if (bcn_loss_cfg) {
+        if (pds_sleep_us > bcn_loss_cfg->win_extend_start_us) {
+            pds_sleep_us -= bcn_loss_cfg->win_extend_start_us;
+        } else {
+            pds_sleep_us = 0;
+        }
+    }
+
+
+    if (iot2lp_para->last_beacon_stamp_rtc_valid) {
+        /* total error form (lasst bcn -> next bcn), jitter error compensation (ppm) */
+        total_error = (int64_t)((rtc_now_us - last_beacon_rtc_us) + pds_sleep_us) * iot2lp_para->rtc32k_jitter_error_ppm / (1000 * 1000);
+    } else {
+        /* total error form (now -> next bcn), jitter error compensation (ppm) */
+        total_error = (int64_t)pds_sleep_us * iot2lp_para->rtc32k_jitter_error_ppm / (1000 * 1000);
+    }
+    if (total_error > 2 * 1000) {
+        total_error = 2 * 1000;
+    }
+    if (pds_sleep_us > total_error) {
+        pds_sleep_us -= total_error;
+    } else {
+        pds_sleep_us = 0;
+    }
+
+    /* Recorded the error value, for mtimer timeout */
+    iot2lp_para->last_sleep_error_us = total_error;
+
+
 
     if ((rtc_wakeup_cmp_cnt == 0) && rtc_sleep_us > ((uint64_t)24 * 60 * 60 * 1000 * 1000)) {
         rtc_sleep_us = ((uint64_t)24 * 60 * 60 * 1000 * 1000);
@@ -1217,7 +1306,7 @@ int ATTR_TCM_SECTION bl_lp_fw_enter(bl_lp_fw_cfg_t *bl_lp_fw_cfg)
     // BL_LP_LOG("rc32k code %ld\r\n", iot2lp_para->rc32k_trim_parameter->rc32k_fr_ext);
     // BL_LP_LOG("rtc ppm %ld\r\n", iot2lp_para->rc32k_trim_parameter->rtc32k_error_ppm);
     arch_delay_us(500);
-
+    pds_sleep_us -= 500;
 
     /* Check iot2lp_para pointer variables for valid values */
     if (bl_lp_check_iot2lp_para_pointers(iot2lp_para) != 0) {
@@ -1307,6 +1396,9 @@ int ATTR_TCM_SECTION bl_lp_fw_enter(bl_lp_fw_cfg_t *bl_lp_fw_cfg)
     __set_MEXSTATUS(mexstatus);
 
     bl_lp_debug_record_time(iot2lp_para, "return APP");
+
+    /* Disable GPIO keep after wakeup */
+    PDS_Disable_ALL_GPIO_Keep();
 
     /* clock re-init */
 

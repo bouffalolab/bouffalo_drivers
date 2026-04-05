@@ -10,12 +10,15 @@
         (field)[3] = (uint8_t)((value) >> 24); \
     } while (0)
 
-__UNUSED static void bflb_i2c_addr_config(struct bflb_device_s *dev, uint16_t slaveaddr, uint8_t *subaddr, uint8_t subaddr_size, bool is_addr_10bit)
+__UNUSED static void bflb_i2c_addr_config(struct bflb_device_s *dev, uint16_t slaveaddr, uint8_t *subaddr,
+                                          uint8_t subaddr_size, bool is_addr_10bit)
 {
     uint32_t regval;
     uint32_t reg_base;
+#if !defined(BL616CL)
     uint32_t subaddr_offset;
     uint8_t subaddr_idx;
+#endif
 
     reg_base = dev->reg_base;
 
@@ -37,6 +40,27 @@ __UNUSED static void bflb_i2c_addr_config(struct bflb_device_s *dev, uint16_t sl
     putreg32(regval, reg_base + I2C_CONFIG_OFFSET);
 #endif
 
+#if defined(BL616CL)
+    /* sub-address data is written to FIFO, not to a separate register */
+    if (subaddr_size > 0 && subaddr != NULL) {
+        uint8_t subaddr_idx = 0;
+        while (subaddr_idx < subaddr_size) {
+            if (subaddr_idx + 4 <= subaddr_size) {
+                regval = subaddr[subaddr_idx] | (subaddr[subaddr_idx + 1] << 8) | (subaddr[subaddr_idx + 2] << 16) |
+                         (subaddr[subaddr_idx + 3] << 24);
+                putreg32(regval, reg_base + I2C_FIFO_WDATA_OFFSET);
+                subaddr_idx += 4;
+            } else {
+                regval = 0;
+                for (uint8_t j = 0; subaddr_idx + j < subaddr_size; j++) {
+                    regval |= subaddr[subaddr_idx + j] << (j * 8);
+                }
+                putreg32(regval, reg_base + I2C_FIFO_WDATA_OFFSET);
+                break;
+            }
+        }
+    }
+#else
     subaddr_idx = 0;
     while (subaddr_idx < subaddr_size) {
         subaddr_offset = subaddr_idx & ~3;
@@ -53,15 +77,18 @@ __UNUSED static void bflb_i2c_addr_config(struct bflb_device_s *dev, uint16_t sl
             putreg32(regval, reg_base + I2C_SUB_ADDR_OFFSET + subaddr_offset);
             break;
         } else if (subaddr_idx + 4 >= subaddr_size) {
-            regval = subaddr[subaddr_idx] | (subaddr[subaddr_idx + 1] << 8) | (subaddr[subaddr_idx + 2] << 16) | (subaddr[subaddr_idx + 3] << 24);
+            regval = subaddr[subaddr_idx] | (subaddr[subaddr_idx + 1] << 8) | (subaddr[subaddr_idx + 2] << 16) |
+                     (subaddr[subaddr_idx + 3] << 24);
             putreg32(regval, reg_base + I2C_SUB_ADDR_OFFSET + subaddr_offset);
             break;
         } else {
-            regval = subaddr[subaddr_idx] | (subaddr[subaddr_idx + 1] << 8) | (subaddr[subaddr_idx + 2] << 16) | (subaddr[subaddr_idx + 3] << 24);
+            regval = subaddr[subaddr_idx] | (subaddr[subaddr_idx + 1] << 8) | (subaddr[subaddr_idx + 2] << 16) |
+                     (subaddr[subaddr_idx + 3] << 24);
             putreg32(regval, reg_base + I2C_SUB_ADDR_OFFSET + subaddr_offset);
             subaddr_idx += 4;
         }
     }
+#endif
 
     regval = getreg32(reg_base + I2C_CONFIG_OFFSET);
     regval &= ~I2C_CR_I2C_SLV_ADDR_MASK;
@@ -163,7 +190,8 @@ __UNUSED static void bflb_i2c_set_frequence(struct bflb_device_s *dev, uint32_t 
 
     /* calculate data phase */
     regval = (phase0 - 1) << I2C_CR_I2C_PRD_D_PH_0_SHIFT;
-    regval |= (((phase1 - bias - 1) <= 0) ? 1 : (phase1 - bias - 1)) << I2C_CR_I2C_PRD_D_PH_1_SHIFT; /* data phase1 must not be 0 */
+    regval |= (((phase1 - bias - 1) <= 0) ? 1 : (phase1 - bias - 1))
+              << I2C_CR_I2C_PRD_D_PH_1_SHIFT; /* data phase1 must not be 0 */
     regval |= (phase2 - 1) << I2C_CR_I2C_PRD_D_PH_2_SHIFT;
     regval |= (phase3 - 1) << I2C_CR_I2C_PRD_D_PH_3_SHIFT;
     putreg32(regval, reg_base + I2C_PRD_DATA_OFFSET);
@@ -261,6 +289,10 @@ static inline void bflb_i2c_disable(struct bflb_device_s *dev)
     regval |= I2C_CR_I2C_END_CLR;
     regval |= I2C_CR_I2C_NAK_CLR;
     regval |= I2C_CR_I2C_ARB_CLR;
+#if defined(BL616CL)
+    regval |= I2C_CR_I2C_M_TO_CLR;
+    regval |= I2C_CR_I2C_RES_CLR;
+#endif
     putreg32(regval, reg_base + I2C_INT_STS_OFFSET);
 }
 
@@ -384,6 +416,280 @@ __UNUSED static int bflb_i2c_read_bytes(struct bflb_device_s *dev, uint8_t *data
     return 0;
 }
 
+#if defined(BL616CL)
+__UNUSED static int bflb_i2c_write_bytes_restart(struct bflb_device_s *dev, uint8_t *data, uint32_t len)
+{
+    uint32_t reg_base;
+    uint32_t temp = 0;
+    uint8_t *tmp_buf;
+    uint64_t start_time;
+
+    reg_base = dev->reg_base;
+    tmp_buf = data;
+    while (len >= 4) {
+        for (uint8_t i = 0; i < 4; i++) {
+            temp += (tmp_buf[i] << ((i % 4) * 8));
+        }
+        tmp_buf += 4;
+        len -= 4;
+        start_time = bflb_mtimer_get_time_ms();
+        while ((getreg32(reg_base + I2C_FIFO_CONFIG_1_OFFSET) & I2C_TX_FIFO_CNT_MASK) == 0) {
+            if ((bflb_mtimer_get_time_ms() - start_time) > 100) {
+                return -ETIMEDOUT;
+            }
+        }
+        putreg32(temp, reg_base + I2C_FIFO_WDATA_OFFSET);
+        temp = 0;
+    }
+
+    if (len > 0) {
+        for (uint8_t i = 0; i < len; i++) {
+            temp += (tmp_buf[i] << ((i % 4) * 8));
+        }
+        start_time = bflb_mtimer_get_time_ms();
+        while ((getreg32(reg_base + I2C_FIFO_CONFIG_1_OFFSET) & I2C_TX_FIFO_CNT_MASK) == 0) {
+            if ((bflb_mtimer_get_time_ms() - start_time) > 100) {
+                return -ETIMEDOUT;
+            }
+        }
+        putreg32(temp, reg_base + I2C_FIFO_WDATA_OFFSET);
+    }
+
+    return 0;
+}
+
+__UNUSED static int bflb_i2c_read_bytes_restart(struct bflb_device_s *dev, uint8_t *data, uint32_t len)
+{
+    uint32_t reg_base;
+    uint32_t temp = 0;
+    uint8_t *tmp_buf;
+    uint64_t start_time;
+
+    reg_base = dev->reg_base;
+    tmp_buf = data;
+
+    while (len >= 4) {
+        start_time = bflb_mtimer_get_time_ms();
+        while ((getreg32(reg_base + I2C_FIFO_CONFIG_1_OFFSET) & I2C_RX_FIFO_CNT_MASK) == 0) {
+            if ((bflb_mtimer_get_time_ms() - start_time) > 100) {
+                return -ETIMEDOUT;
+            }
+        }
+        temp = getreg32(reg_base + I2C_FIFO_RDATA_OFFSET);
+        PUT_UINT32_LE(tmp_buf, temp);
+        tmp_buf += 4;
+        len -= 4;
+    }
+
+    if (len > 0) {
+        start_time = bflb_mtimer_get_time_ms();
+        while ((getreg32(reg_base + I2C_FIFO_CONFIG_1_OFFSET) & I2C_RX_FIFO_CNT_MASK) == 0) {
+            if ((bflb_mtimer_get_time_ms() - start_time) > 100) {
+                return -ETIMEDOUT;
+            }
+        }
+        temp = getreg32(reg_base + I2C_FIFO_RDATA_OFFSET);
+
+        for (uint8_t i = 0; i < len; i++) {
+            tmp_buf[i] = (temp >> (i * 8)) & 0xff;
+        }
+    }
+
+    return 0;
+}
+
+__UNUSED static int bflb_i2c_transfer_restart(struct bflb_device_s *dev, struct bflb_i2c_msg_s *msgs, int count)
+{
+    uint32_t restart_cnt = 0;
+    uint32_t restart_index = 0;
+    uint32_t reg_base;
+    uint32_t regval;
+    uint32_t i;
+    uint64_t start_time;
+
+    for (i = 0; i < count; i++) {
+        if (msgs[i].flags & I2C_M_RESTART) {
+            restart_cnt++;
+        }
+    }
+
+    if (restart_cnt > 7) {
+        restart_cnt = 7;
+    }
+
+    bflb_i2c_disable(dev);
+
+    reg_base = dev->reg_base;
+    regval = getreg32(reg_base + I2C_RE_S_CFG5_OFFSET);
+    regval &= ~I2C_CR_I2C_RE_START_NUM_MASK;
+    regval |= (restart_cnt << I2C_CR_I2C_RE_START_NUM_SHIFT);
+    regval |= I2C_CR_I2C_RE_START_NO_TRIG;
+
+    if (restart_cnt) {
+        regval |= I2C_CR_I2C_RE_START_EN;
+    } else {
+        regval &= ~I2C_CR_I2C_RE_START_EN;
+    }
+    putreg32(regval, reg_base + I2C_RE_S_CFG5_OFFSET);
+
+    for (i = 0; i < count; i++) {
+        if (i < 2 && !(msgs[i].flags & I2C_M_RESTART)) {
+            if (msgs[i].flags & I2C_M_TEN) {
+                regval = getreg32(reg_base + I2C_CONFIG_OFFSET);
+                regval |= I2C_CR_I2C_10B_ADDR_EN;
+                putreg32(regval, reg_base + I2C_CONFIG_OFFSET);
+            } else {
+                regval = getreg32(reg_base + I2C_CONFIG_OFFSET);
+                regval &= ~I2C_CR_I2C_10B_ADDR_EN;
+                putreg32(regval, reg_base + I2C_CONFIG_OFFSET);
+            }
+
+            regval = getreg32(reg_base + I2C_CONFIG_OFFSET);
+            regval &= ~I2C_CR_I2C_SLV_ADDR_MASK;
+            regval |= ((msgs[i].addr << I2C_CR_I2C_SLV_ADDR_SHIFT) & I2C_CR_I2C_SLV_ADDR_MASK);
+            putreg32(regval, reg_base + I2C_CONFIG_OFFSET);
+
+            if (msgs[i].flags & I2C_M_NOSTOP) {
+                regval = getreg32(reg_base + I2C_CONFIG_1_OFFSET);
+                regval |= I2C_CR_I2C_SUB_ADDR_EN;
+                regval &= ~I2C_CR_I2C_SUB_ADDR_BC_MASK;
+                regval |= (((msgs[i].length - 1) << I2C_CR_I2C_SUB_ADDR_BC_SHIFT) & I2C_CR_I2C_SUB_ADDR_BC_MASK);
+                putreg32(regval, reg_base + I2C_CONFIG_1_OFFSET);
+                i++;
+            } else {
+                regval = getreg32(reg_base + I2C_CONFIG_1_OFFSET);
+                regval &= ~I2C_CR_I2C_SUB_ADDR_EN;
+                putreg32(regval, reg_base + I2C_CONFIG_1_OFFSET);
+            }
+
+            if (msgs[i].length > 1024) {
+                return -EINVAL;
+            }
+
+            bflb_i2c_set_datalen(dev, msgs[i].length);
+            if (msgs[i].flags & I2C_M_READ) {
+                bflb_i2c_set_dir(dev, 1);
+            } else {
+                bflb_i2c_set_dir(dev, 0);
+            }
+        } else {
+            if (msgs[i].flags & I2C_M_RESTART) {
+                if (msgs[i].flags & I2C_M_TEN) {
+                    regval = getreg32(reg_base + I2C_CONFIG_1_OFFSET);
+                    regval |= (I2C_CR_I2C_10B_ADDR_EN_RE_START1 << restart_index);
+                    putreg32(regval, reg_base + I2C_CONFIG_1_OFFSET);
+                } else {
+                    regval = getreg32(reg_base + I2C_CONFIG_1_OFFSET);
+                    regval &= ~(I2C_CR_I2C_10B_ADDR_EN_RE_START1 << restart_index);
+                    putreg32(regval, reg_base + I2C_CONFIG_1_OFFSET);
+                }
+
+                regval = getreg32(reg_base + I2C_RE_S_CFG0_OFFSET + 0x4 * (restart_index / 3));
+                regval &= ~(I2C_CR_I2C_SLV_ADDR_RE_START1_MASK << (10 * (restart_index % 3)));
+                regval |= ((msgs[i].addr & I2C_CR_I2C_SLV_ADDR_RE_START1_MASK) << (10 * (restart_index % 3)));
+                putreg32(regval, reg_base + I2C_RE_S_CFG0_OFFSET + 0x4 * (restart_index / 3));
+
+                if (msgs[i].flags & I2C_M_NOSTOP) {
+                    regval = getreg32(reg_base + I2C_RE_S_CFG0_OFFSET + 0x4 * (restart_index / 2));
+                    regval |= (I2C_CR_I2C_SUB_ADDR_EN_RE_START1 << (restart_index % 2));
+                    putreg32(regval, reg_base + I2C_RE_S_CFG0_OFFSET + 0x4 * (restart_index / 2));
+
+                    regval = getreg32(reg_base + I2C_RE_S_CFG4_OFFSET + (restart_index < 3 ? 0 : 0x4));
+                    regval &= ~(0xf << ((20 + 4 * restart_index) % 32));
+                    regval |= (((msgs[i].length - 1) & 0xf) << ((20 + 4 * restart_index) % 32));
+                    putreg32(regval, reg_base + I2C_RE_S_CFG4_OFFSET + (restart_index < 3 ? 0 : 0x4));
+                    i++;
+                } else {
+                    regval = getreg32(reg_base + I2C_RE_S_CFG0_OFFSET + 0x4 * (restart_index / 2));
+                    regval &= ~(I2C_CR_I2C_SUB_ADDR_EN_RE_START1 << (restart_index % 2));
+                    putreg32(regval, reg_base + I2C_RE_S_CFG0_OFFSET + 0x4 * (restart_index / 2));
+                }
+
+                if (msgs[i].length > 1024) {
+                    return -EINVAL;
+                }
+
+                regval = getreg32(reg_base + I2C_RE_S_CFG2_OFFSET + 0x4 * ((restart_index + 1) / 3));
+                regval &= ~(I2C_CR_I2C_PKT_LEN_RE_START3_MASK << (10 * ((restart_index + 1) % 3)));
+                regval |=
+                    (((msgs[i].length - 1) & I2C_CR_I2C_PKT_LEN_RE_START3_MASK) << (10 * ((restart_index + 1) % 3)));
+                putreg32(regval, reg_base + I2C_RE_S_CFG2_OFFSET + 0x4 * ((restart_index + 1) / 3));
+
+                if (msgs[i].flags & I2C_M_READ) {
+                    regval = getreg32(reg_base + I2C_RE_S_CFG5_OFFSET);
+                    regval |= (I2C_CR_I2C_PKT_DIR_RE_START1 << restart_index);
+                    putreg32(regval, reg_base + I2C_RE_S_CFG5_OFFSET);
+                } else {
+                    regval = getreg32(reg_base + I2C_RE_S_CFG5_OFFSET);
+                    regval &= ~(I2C_CR_I2C_PKT_DIR_RE_START1 << restart_index);
+                    putreg32(regval, reg_base + I2C_RE_S_CFG5_OFFSET);
+                }
+                restart_index++;
+            }
+        }
+    }
+
+    for (i = 0; i < count; i++) {
+        if (msgs[i].flags & I2C_M_DMA) {
+            bflb_i2c_enable(dev);
+            return 0;
+        }
+    }
+
+    for (i = 0; i < count; i++) {
+        if (i < 2 && !(msgs[i].flags & I2C_M_RESTART)) {
+            if (msgs[i].flags & I2C_M_NOSTOP) {
+                bflb_i2c_write_bytes_restart(dev, msgs[i].buffer, msgs[i].length);
+                bflb_i2c_enable(dev);
+                i++;
+            }
+            if (msgs[i].flags & I2C_M_READ) {
+                bflb_i2c_enable(dev);
+                bflb_i2c_read_bytes_restart(dev, msgs[i].buffer, msgs[i].length);
+            } else {
+                bflb_i2c_write_bytes_restart(dev, msgs[i].buffer, msgs[i].length);
+                bflb_i2c_enable(dev);
+            }
+        } else {
+            if (msgs[i].flags & I2C_M_RESTART) {
+                if (msgs[i].flags & I2C_M_NOSTOP) {
+                    bflb_i2c_write_bytes_restart(dev, msgs[i].buffer, msgs[i].length);
+                    bflb_i2c_enable(dev);
+                    i++;
+                }
+                if (msgs[i].flags & I2C_M_READ) {
+                    bflb_i2c_enable(dev);
+                    bflb_i2c_read_bytes_restart(dev, msgs[i].buffer, msgs[i].length);
+                } else {
+                    bflb_i2c_write_bytes_restart(dev, msgs[i].buffer, msgs[i].length);
+                    bflb_i2c_enable(dev);
+                }
+            }
+        }
+    }
+
+    if (msgs[i - 1].flags & I2C_M_READ) {
+        start_time = bflb_mtimer_get_time_ms();
+        while (bflb_i2c_isbusy(dev) || !bflb_i2c_isend(dev)) {
+            if ((bflb_mtimer_get_time_ms() - start_time) > 100) {
+                return -ETIMEDOUT;
+            }
+        }
+        bflb_i2c_disable(dev);
+    } else {
+        start_time = bflb_mtimer_get_time_ms();
+        while (bflb_i2c_isbusy(dev) || !bflb_i2c_isend(dev) || bflb_i2c_isnak(dev)) {
+            if ((bflb_mtimer_get_time_ms() - start_time) > 100) {
+                return -ETIMEDOUT;
+            }
+        }
+        bflb_i2c_disable(dev);
+    }
+
+    return 0;
+}
+#endif
+
 void bflb_i2c_init(struct bflb_device_s *dev, uint32_t frequency)
 {
 #ifdef romapi_bflb_i2c_init
@@ -398,12 +704,12 @@ void bflb_i2c_init(struct bflb_device_s *dev, uint32_t frequency)
 
     regval = getreg32(reg_base + I2C_INT_STS_OFFSET);
 
-    regval |= (I2C_CR_I2C_END_MASK |
-               I2C_CR_I2C_TXF_MASK |
-               I2C_CR_I2C_RXF_MASK |
-               I2C_CR_I2C_NAK_MASK |
-               I2C_CR_I2C_ARB_MASK |
-               I2C_CR_I2C_FER_MASK);
+    regval |= (I2C_CR_I2C_END_MASK | I2C_CR_I2C_TXF_MASK | I2C_CR_I2C_RXF_MASK | I2C_CR_I2C_NAK_MASK |
+               I2C_CR_I2C_ARB_MASK | I2C_CR_I2C_FER_MASK);
+#if defined(BL616CL)
+    regval |= I2C_CR_I2C_M_TO_INT_MASK;
+    regval |= I2C_CR_RES_MASK;
+#endif
 
     putreg32(regval, reg_base + I2C_INT_STS_OFFSET);
 
@@ -425,12 +731,12 @@ void bflb_i2c_deinit(struct bflb_device_s *dev)
 
     regval = getreg32(reg_base + I2C_INT_STS_OFFSET);
 
-    regval |= (I2C_CR_I2C_END_MASK |
-               I2C_CR_I2C_TXF_MASK |
-               I2C_CR_I2C_RXF_MASK |
-               I2C_CR_I2C_NAK_MASK |
-               I2C_CR_I2C_ARB_MASK |
-               I2C_CR_I2C_FER_MASK);
+    regval |= (I2C_CR_I2C_END_MASK | I2C_CR_I2C_TXF_MASK | I2C_CR_I2C_RXF_MASK | I2C_CR_I2C_NAK_MASK |
+               I2C_CR_I2C_ARB_MASK | I2C_CR_I2C_FER_MASK);
+#if defined(BL616CL)
+    regval |= I2C_CR_I2C_M_TO_INT_MASK;
+    regval |= I2C_CR_RES_MASK;
+#endif
 
     putreg32(regval, reg_base + I2C_INT_STS_OFFSET);
 #endif
@@ -482,6 +788,16 @@ int bflb_i2c_transfer(struct bflb_device_s *dev, struct bflb_i2c_msg_s *msgs, in
     uint16_t subaddr_size = 0;
     bool is_addr_10bit = false;
     int ret = 0;
+    uint32_t i;
+
+#if defined(BL616CL)
+    for (i = 0; i < count; i++) {
+        if (msgs[i].flags & I2C_M_RESTART) {
+            bflb_i2c_transfer_restart(dev, msgs, count);
+            return 0;
+        }
+    }
+#endif
 
     if (count > 2) {
         return -EINVAL;
@@ -489,7 +805,7 @@ int bflb_i2c_transfer(struct bflb_device_s *dev, struct bflb_i2c_msg_s *msgs, in
 
     bflb_i2c_disable(dev);
 
-    for (uint16_t i = 0; i < count; i++) {
+    for (i = 0; i < count; i++) {
         if (msgs[i].flags & I2C_M_TEN) {
             is_addr_10bit = true;
         } else {
@@ -569,6 +885,14 @@ void bflb_i2c_int_clear(struct bflb_device_s *dev, uint32_t int_clear)
     reg_base = dev->reg_base;
     regval = getreg32(reg_base + I2C_INT_STS_OFFSET);
     regval |= (int_clear & 0xff) << 16;
+#if defined(BL616CL)
+    if (int_clear & I2C_INTCLR_TIMEOUT) {
+        regval |= I2C_CR_I2C_M_TO_CLR;
+    }
+    if (int_clear & I2C_INTCLR_RESTART) {
+        regval |= I2C_CR_I2C_RES_CLR;
+    }
+#endif
     putreg32(regval, reg_base + I2C_INT_STS_OFFSET);
 #endif
 }
@@ -581,7 +905,11 @@ uint32_t bflb_i2c_get_intstatus(struct bflb_device_s *dev)
     uint32_t reg_base;
 
     reg_base = dev->reg_base;
+#if defined(BL616CL)
+    return (getreg32(reg_base + I2C_INT_STS_OFFSET) & 0x4040007f);
+#else
     return (getreg32(reg_base + I2C_INT_STS_OFFSET) & 0x7f);
+#endif
 #endif
 }
 
