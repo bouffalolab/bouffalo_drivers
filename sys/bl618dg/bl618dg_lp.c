@@ -1,37 +1,4 @@
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include "bl_lp.h"
-#include "bl618dg_hbn.h"
-#include "bl618dg_pds.h"
-#include "bl618dg_pm.h"
-#include "bl618dg_xip_recovery.h"
-
-#if (1)
-#define BL_LP_LOG        printf
-#define BL_LP_TIME_DEBUG 1
-#else
-#define BL_LP_LOG
-#define BL_LP_TIME_DEBUG 0
-#endif
-
-#define GET_OFFSET(_type, _member) ((unsigned long)(&((_type *)0)->_member))
-
-struct lp_env {
-    void *sys_enter_arg;
-    void *user_enter_arg;
-    void *sys_exit_arg;
-    void *user_exit_arg;
-
-    bl_lp_cb_t sys_pre_enter_callback;
-    bl_lp_cb_t user_pre_enter_callback;
-    bl_lp_cb_t sys_after_exit_callback;
-    bl_lp_cb_t user_after_exit_callback;
-
-    uint8_t wifi_hw_resume;
-    uint8_t wifi_fw_ready;
-    uint32_t gpio_stat;
-};
+#include "bl_lp_internal.h"
 
 static ATTR_NOCACHE_RAM_SECTION struct bl_lp_info_s lp_info_struct = { 0 };
 static ATTR_NOCACHE_RAM_SECTION lp_fw_wifi_para_t wifi_param = { 0 };
@@ -44,6 +11,9 @@ static ATTR_NOCACHE_RAM_SECTION lp_fw_bcn_loss_t beacon_loss_info = { 0 };
 static ATTR_NOCACHE_RAM_SECTION lp_fw_jtag_t lp_fw_jtag_parameter = { 0 };
 static ATTR_NOCACHE_RAM_SECTION lp_fw_uart_t lp_fw_uart_cfg = { 0 };
 static ATTR_NOCACHE_RAM_SECTION lp_fw_clock_t lp_fw_clock_cfg = { 0 };
+#if (BL_LP_TIME_DEBUG)
+static ATTR_NOCACHE_RAM_SECTION lp_fw_time_debug_t time_debug_buff[TIME_DEBUG_NUM_MAX] = { 0 };
+#endif
 
 static uint64_t g_rtc_timestamp_before_sleep_us = 0;    /* rtc 1 */
 static uint64_t g_rtc_timestamp_after_sleep_us = 0;     /* rtc 2 */
@@ -51,12 +21,6 @@ static uint64_t g_mtimer_timestamp_before_sleep_us = 0; /* mtime 1 */
 static uint64_t g_mtimer_timestamp_after_sleep_us = 0;  /* mtime 2 */
 static uint64_t g_virtual_timestamp_base_us = 0;        /* virtual time base */
 
-typedef lp_gpio_cfg_type lp_fw_gpio_cfg_t;
-static lp_fw_gpio_cfg_t *gp_lp_io_cfg = NULL;
-static bl_lp_soft_irq_callback_t lp_soft_callback = { NULL };
-
-
-static struct lp_env *gp_lp_env = NULL;
 ATTR_TCM_CONST_SECTION iot2lp_para_t *const iot2lp_para = (iot2lp_para_t *)IOT2LP_PARA_ADDR;
 extern uint32_t *export_get_rx_buffer1_addr(void);
 
@@ -249,202 +213,6 @@ void ATTR_TCM_SECTION __attribute__((aligned(16))) lp_fw_restore_cpu_para(uint32
                          "csrw    mtvec, a0\n\t");
 }
 
-void bl_lp_fw_bcn_loss_cfg(lp_fw_bcn_loss_level_t *cfg_table, uint16_t table_num, uint16_t loop_start,
-                           uint16_t loss_max)
-{
-    if (cfg_table == NULL || table_num == 0) {
-        return;
-    }
-
-    if (loop_start >= table_num) {
-        loop_start = table_num;
-    }
-
-    /* cache clean */
-    csi_dcache_clean_range(cfg_table, sizeof(lp_fw_bcn_loss_level_t) * table_num);
-
-    /* nocache ram */
-    cfg_table = (void *)(((uint32_t)cfg_table) & 0x2fffffff);
-
-    iot2lp_para->bcn_loss_info->continuous_loss_cnt_max = loss_max;
-    iot2lp_para->bcn_loss_info->bcn_loss_cfg_table = cfg_table;
-    iot2lp_para->bcn_loss_info->bcn_loss_loop_start = loop_start;
-    iot2lp_para->bcn_loss_info->bcn_loss_level_max = table_num;
-
-    /* clear */
-    iot2lp_para->bcn_loss_info->bcn_loss_level = 0;
-    iot2lp_para->bcn_loss_info->continuous_loss_cnt = 0;
-}
-void bl_lp_fw_bcn_loss_cfg_dtim_default(uint8_t dtim_num)
-{
-    int32_t cfg_table_num;
-    int32_t cfg_loop_start;
-    uint32_t cfg_loss_max;
-    static ATTR_NOCACHE_NOINIT_RAM_SECTION lp_fw_bcn_loss_level_t bcn_loss_cfg_buff[20];
-
-    /* dtim10 */
-    int32_t dtim10_table_num = 18;
-    int32_t dtim10_loop_start = 6;
-    uint32_t dtim10_loss_max = 6 + 12 * 20;
-    static const lp_fw_bcn_loss_level_t dtim10_cfg_table[18] = {
-        { 10, 0, 2000, 6000 },  /* loss 0, unused */
-        { 8, 0, 2000, 10000 },  /* loss 1 */
-        { 6, 0, 3000, 12000 },  /* loss 2 */
-        { 6, 0, 4000, 14000 },  /* loss 3 */
-        { 6, 0, 6000, 18000 },  /* loss 4 */
-        { 6, 1, 18000, 42000 }, /* loss 5, wakeup */
-
-        { 9, 0, 2000, 5000 },   /* loss 1 */
-        { 8, 0, 3000, 8000 },   /* loss 2 */
-        { 8, 0, 4000, 12000 },  /* loss 3 */
-        { 6, 0, 5000, 12000 },  /* loss 4 */
-        { 6, 0, 6000, 12000 },  /* loss 5 */
-        { 6, 1, 20000, 50000 }, /* loss 6, wakeup */
-
-        { 9, 0, 2000, 4000 },    /* loss 1 */
-        { 8, 0, 4000, 8000 },    /* loss 2 */
-        { 8, 0, 6000, 12000 },   /* loss 3 */
-        { 6, 0, 6000, 12000 },   /* loss 4 */
-        { 6, 0, 6000, 12000 },   /* loss 5 */
-        { 6, 1, 50000, 110000 }, /* loss 6, wakeup */
-                                 /* cfg table over */
-    };
-
-    /* dtim6 */
-    int32_t dtim6_table_num = 20;
-    int32_t dtim6_loop_start = 6;
-    uint32_t dtim6_loss_max = 6 + 14 * 20;
-    static const lp_fw_bcn_loss_level_t dtim6_cfg_table[20] = {
-        { 6, 0, 2000, 4000 },   /* loss 0, unused */
-        { 6, 0, 2000, 6000 },   /* loss 1 */
-        { 5, 0, 3000, 10000 },  /* loss 2 */
-        { 4, 0, 4000, 8000 },   /* loss 3 */
-        { 3, 0, 6000, 14000 },  /* loss 4 */
-        { 3, 1, 15000, 40000 }, /* loss 5, wakeup */
-
-        { 6, 0, 2000, 4000 },   /* loss 1 */
-        { 6, 0, 3000, 8000 },   /* loss 2 */
-        { 5, 0, 4000, 8000 },   /* loss 3 */
-        { 5, 0, 4000, 10000 },  /* loss 4 */
-        { 4, 0, 3000, 10000 },  /* loss 5 */
-        { 4, 0, 5000, 10000 },  /* loss 6 */
-        { 3, 1, 20000, 50000 }, /* loss 7, wakeup */
-
-        { 6, 0, 2000, 4000 },    /* loss 1 */
-        { 6, 0, 3000, 8000 },    /* loss 2 */
-        { 5, 0, 4000, 8000 },    /* loss 3 */
-        { 5, 0, 4000, 10000 },   /* loss 4 */
-        { 4, 0, 3000, 10000 },   /* loss 5 */
-        { 4, 0, 5000, 10000 },   /* loss 6 */
-        { 3, 1, 50000, 110000 }, /* loss 7, wakeup */
-                                 /* cfg table over */
-    };
-
-    /* dtim3 */
-    int32_t dtim3_table_num = 20;
-    int32_t dtim3_loop_start = 8;
-    uint32_t dtim3_loss_max = 8 + 12 * 20;
-    static const lp_fw_bcn_loss_level_t dtim3_cfg_table[20] = {
-        { 3, 0, 2000, 4000 },   /* loss 0, unused */
-        { 3, 0, 2000, 6000 },   /* loss 1 */
-        { 3, 0, 3000, 10000 },  /* loss 2 */
-        { 3, 0, 4000, 8000 },   /* loss 3 */
-        { 2, 0, 3000, 8000 },   /* loss 4 */
-        { 3, 0, 3000, 10000 },  /* loss 5 */
-        { 2, 0, 6000, 14000 },  /* loss 6 */
-        { 3, 1, 15000, 40000 }, /* loss 7, wakeup */
-
-        { 3, 0, 2000, 5000 },    /* loss 1 */
-        { 3, 0, 3000, 6000 },    /* loss 2 */
-        { 3, 0, 4000, 8000 },    /* loss 3 */
-        { 3, 0, 10000, 20000 },  /* loss 4 */
-        { 3, 0, 3000, 6000 },    /* loss 5 */
-        { 2, 0, 3000, 6000 },    /* loss 6 */
-        { 3, 0, 4000, 8000 },    /* loss 7 */
-        { 3, 0, 4000, 8000 },    /* loss 8 */
-        { 3, 0, 4000, 10000 },   /* loss 9 */
-        { 2, 0, 4000, 10000 },   /* loss 10 */
-        { 3, 0, 10000, 20000 },  /* loss 11 */
-        { 3, 1, 50000, 110000 }, /* loss 12, wakeup */
-                                 /* cfg table over */
-    };
-
-    /* dtim1 */
-    int32_t dtim1_table_num = 20;
-    int32_t dtim1_loop_start = 8;
-    uint32_t dtim1_loss_max = 8 + 12 * 20;
-    static const lp_fw_bcn_loss_level_t dtim1_cfg_table[20] = {
-        { 1, 0, 2000, 4000 },   /* loss 0, unused */
-        { 1, 0, 2000, 6000 },   /* loss 1 */
-        { 1, 0, 3000, 10000 },  /* loss 2 */
-        { 1, 0, 4000, 8000 },   /* loss 3 */
-        { 2, 0, 3000, 8000 },   /* loss 4 */
-        { 3, 0, 3000, 8000 },   /* loss 5 */
-        { 2, 0, 6000, 14000 },  /* loss 6 */
-        { 1, 1, 15000, 40000 }, /* loss 7, wakeup */
-
-        { 1, 0, 2000, 4000 },    /* loss 1 */
-        { 2, 0, 3000, 6000 },    /* loss 2 */
-        { 3, 0, 4000, 8000 },    /* loss 3 */
-        { 1, 0, 10000, 20000 },  /* loss 4 */
-        { 2, 0, 3000, 6000 },    /* loss 5 */
-        { 3, 0, 3000, 6000 },    /* loss 6 */
-        { 1, 0, 4000, 8000 },    /* loss 7 */
-        { 2, 0, 4000, 8000 },    /* loss 8 */
-        { 3, 0, 4000, 8000 },    /* loss 9 */
-        { 1, 0, 4000, 8000 },    /* loss 10 */
-        { 2, 0, 10000, 20000 },  /* loss 11 */
-        { 3, 1, 50000, 110000 }, /* loss 12, wakeup */
-                                 /* cfg table over */
-    };
-
-    if (dtim_num == 0) {
-        dtim_num = 10;
-    }
-
-    if (dtim_num < 3) {
-        /* dtim 1 */
-        memcpy(bcn_loss_cfg_buff, dtim1_cfg_table, sizeof(dtim1_cfg_table));
-        cfg_table_num = dtim1_table_num;
-        cfg_loop_start = dtim1_loop_start;
-        cfg_loss_max = dtim1_loss_max;
-        BL_LP_LOG("bcn_loss_cfg: dtim-1\r\n");
-    } else if (dtim_num < 6) {
-        /* dtim 3 */
-        memcpy(bcn_loss_cfg_buff, dtim3_cfg_table, sizeof(dtim3_cfg_table));
-        cfg_table_num = dtim3_table_num;
-        cfg_loop_start = dtim3_loop_start;
-        cfg_loss_max = dtim3_loss_max;
-        BL_LP_LOG("bcn_loss_cfg: dtim-3\r\n");
-    } else if (dtim_num < 9) {
-        /* dtim6 */
-        memcpy(bcn_loss_cfg_buff, dtim6_cfg_table, sizeof(dtim6_cfg_table));
-        cfg_table_num = dtim6_table_num;
-        cfg_loop_start = dtim6_loop_start;
-        cfg_loss_max = dtim6_loss_max;
-        BL_LP_LOG("bcn_loss_cfg: dtim-6\r\n");
-    } else {
-        /* dtim10 */
-        memcpy(bcn_loss_cfg_buff, dtim10_cfg_table, sizeof(dtim10_cfg_table));
-        cfg_table_num = dtim10_table_num;
-        cfg_loop_start = dtim10_loop_start;
-        cfg_loss_max = dtim10_loss_max;
-        BL_LP_LOG("bcn_loss_cfg: dtim-10\r\n");
-    }
-
-    bl_lp_fw_bcn_loss_cfg(bcn_loss_cfg_buff, cfg_table_num, cfg_loop_start, cfg_loss_max);
-}
-
-// static void bl_lp_fw_bcn_loss_init(void)
-// {
-//     memset(&beacon_loss_info, 0, sizeof(beacon_loss_info));
-//     iot2lp_para->bcn_loss_info = &beacon_loss_info;
-
-//     iot2lp_para->bcn_loss_info->bcn_loss_level = 0;
-//     iot2lp_para->bcn_loss_info->continuous_loss_cnt = 0;
-//     bl_lp_fw_bcn_loss_cfg_dtim_default(iot2lp_para->wifi_parameter->dtim_num);
-// }
-
 static void rtc_wakeup_init(uint64_t rtc_wakeup_cmp_cnt, uint64_t sleep_us)
 {
     uint32_t tmpVal;
@@ -558,180 +326,6 @@ void bl_lp_info_clear(struct bl_lp_info_s *lp_info)
     lp_info->time_record_start_rtc_cnt = rtc_cnt_now;
 }
 
-bl_lp_fw_info_t *bl_lpfw_bin_get_info(void)
-{
-    return (bl_lp_fw_info_t *)__lpfw_load_addr;
-}
-
-int bl_lpfw_bin_check(void)
-{
-    bl_lp_fw_info_t *lpfw_info = bl_lpfw_bin_get_info();
-
-    if (lpfw_info->magic_code != 0x7766706C) {
-        BL_LP_LOG("lpfw magic code error\r\n");
-        return -1;
-    }
-
-    if ((lpfw_info->lpfw_memory_start & 0x0FFFFFFF) != ((uint32_t)__lpfw_share_start__ & 0x0FFFFFFF)) {
-        BL_LP_LOG("lpfw memory start address error: lpfw:0x%08X, app:0x%08X\r\n", lpfw_info->lpfw_memory_start,
-                  (uint32_t)__lpfw_share_start__);
-        return -2;
-    }
-
-    if ((lpfw_info->lpfw_memory_end - lpfw_info->lpfw_memory_start) >
-        ((uint32_t)__lpfw_share_end__ - (uint32_t)__lpfw_share_start__)) {
-        BL_LP_LOG("lpfw memory size_over\r\n");
-        return -3;
-    }
-
-    return 0;
-}
-
-char *bl_lpfw_bin_get_version_str(void)
-{
-    bl_lp_fw_info_t *lpfw_info = bl_lpfw_bin_get_info();
-
-    if (lpfw_info->magic_code != 0x7766706C) {
-        return NULL;
-    }
-
-    return lpfw_info->lpfw_version_str;
-}
-
-int bl_lpfw_ram_load(void)
-{
-    if (bl_lpfw_bin_check() < 0) {
-        assert(0);
-    }
-
-    uint32_t lpfw_addr = ((uint32_t)__lpfw_share_start__ & 0x0FFFFFFF) | 0x60000000; /* cacheable */
-    uint32_t lpfw_size = *((uint32_t *)__lpfw_load_addr - 7);
-
-    BL_LP_LOG("lpfw_addr:0x%08x\r\n", lpfw_addr);
-    BL_LP_LOG("lpfw_size:%d\r\n", lpfw_size);
-    BL_LP_LOG("__lpfw_load_addr:0x%08x\r\n", __lpfw_load_addr);
-
-    /* load */
-    memcpy((void *)lpfw_addr, __lpfw_load_addr, lpfw_size);
-    /* clean cache */
-    bflb_l1c_dcache_clean_range((void *)lpfw_addr, lpfw_size);
-
-    return 0;
-}
-
-#if 1
-#include "bflb_sec_sha.h"
-
-static ATTR_NOCACHE_NOINIT_RAM_SECTION struct bflb_sha256_ctx_s ctx_sha256;
-
-static void lpfw_sec_sha256(uint32_t addr, uint32_t len, uint8_t *result)
-{
-    struct bflb_device_s *sha256;
-    sha256 = bflb_device_get_by_name(BFLB_NAME_SEC_SHA);
-
-    bflb_group0_request_sha_access(sha256);
-
-    bflb_sha_init(sha256, SHA_MODE_SHA256);
-    bflb_sha256_start(sha256, &ctx_sha256);
-    bflb_sha256_update(sha256, &ctx_sha256, (const uint8_t *)addr, len);
-    bflb_sha256_finish(sha256, &ctx_sha256, result);
-}
-#endif
-int bl_lpfw_ram_verify(void)
-{
-    if (bl_lpfw_bin_check() < 0) {
-        assert(0);
-    }
-
-    uint32_t lpfw_addr = ((uint32_t)__lpfw_share_start__ & 0x0FFFFFFF) | 0x60000000; /* cacheable */
-    uint32_t lpfw_size = *((uint32_t *)__lpfw_load_addr - 7);
-    uint8_t *lpfw_sha256 = (uint8_t *)(__lpfw_load_addr - 16);
-    uint8_t result[32];
-
-    /* hardware sha256 */
-    lpfw_sec_sha256(lpfw_addr, lpfw_size, result);
-
-    if (memcmp(result, lpfw_sha256, 32) != 0) {
-        BL_LP_LOG("lpfw sha256 check failed\r\n");
-        return -1;
-    }
-    return 0;
-}
-
-
-static void bl_lp_soft_irq(void)
-{
-    uint64_t wakeup_io_bits = iot2lp_para->wakeup_reason_info->wakeup_io_bits;
-
-    /* disable soft int */
-    bflb_irq_disable(MSOFT_IRQn);
-    /* clear soft int */
-    BL_LP_SOFT_INT_CLEAR;
-
-    if ((iot2lp_para->wakeup_reason_info->wakeup_reason & LPFW_WAKEUP_IO) && lp_soft_callback.wakeup_io_callback) {
-        lp_soft_callback.wakeup_io_callback(wakeup_io_bits);
-    }
-
-    /* clear */
-    iot2lp_para->wakeup_reason_info->wakeup_io_bits = 0;
-}
-
-
-void bl_lp_wakeup_io_int_register(void (*wakeup_io_callback)(uint64_t wake_up_io_bits))
-{
-    lp_soft_callback.wakeup_io_callback = wakeup_io_callback;
-}
-
-int bl_lp_io_wakeup_cfg(void *io_wakeup_cfg)
-{
-    gp_lp_io_cfg = io_wakeup_cfg;
-    return 0;
-}
-
-void bl_lp_io_wakeup_init(lp_fw_gpio_cfg_t* cfg)
-{
-    int ret = 0;
-    ret = pm_lowpower_gpio_cfg((lp_gpio_cfg_type*)cfg);
-    if (ret) {
-        BL_LP_LOG("[LP] io wakeup init fail!\r\n");
-    }
-}
-
-
-int bl_lp_wakeup_io_get_mode(uint8_t io_num)
-{
-    lp_fw_gpio_cfg_t* b_lp_io_cfg_bak = NULL;
-    b_lp_io_cfg_bak = (lp_fw_gpio_cfg_t *)iot2lp_para->wakeup_source_parameter->io_wakeup_parameter;
-    uint8_t *p_trig_modes = (uint8_t *)&b_lp_io_cfg_bak->io_0_7_trig_mode;
-
-    uint64_t wakeup_io_bits = iot2lp_para->wakeup_reason_info->wakeup_io_bits;
-    uint8_t trig_mode;
-
-    if (io_num >= BL_LP_WAKEUP_IO_MAX_NUM) {
-        return -1;
-    }
-
-    if ((wakeup_io_bits & ((uint64_t)0x1 << io_num)) == 0) {
-        return 0;
-    }
-
-    trig_mode = p_trig_modes[io_num / 8];
-
-    if (trig_mode == BL_LP_PDS_IO_TRIG_SYNC_FALLING_EDGE || trig_mode == BL_LP_PDS_IO_TRIG_ASYNC_FALLING_EDGE) {
-        return BL_LP_IO_WAKEUP_MODE_FALLING;
-    } else if (trig_mode == BL_LP_PDS_IO_TRIG_SYNC_HIGH_LEVEL || trig_mode == BL_LP_PDS_IO_TRIG_ASYNC_HIGH_LEVEL) {
-        return BL_LP_IO_WAKEUP_MODE_HIGH;
-    } else if (trig_mode == BL_LP_PDS_IO_TRIG_SYNC_RISING_EDGE || trig_mode == BL_LP_PDS_IO_TRIG_ASYNC_RISING_EDGE) {
-        return BL_LP_IO_WAKEUP_MODE_RISING;
-    } else if (trig_mode == BL_LP_PDS_IO_TRIG_SYNC_RISING_FALLING_EDGE) {
-        return BL_LP_IO_WAKEUP_MODE_RISING_FALLING;
-    } else {
-        return -1;
-    }
-
-    return trig_mode;
-}
-
 void bl_lp_fw_init(void)
 {
     /* Global iot2lp_para pointer is already initialized as const */
@@ -747,8 +341,6 @@ void bl_lp_fw_init(void)
     memset(iot2lp_para, 0, (uint32_t)&iot2lp_para->reset_keep - (uint32_t)iot2lp_para);
 
 #if (BL_LP_TIME_DEBUG)
-    /* time debug */
-    static ATTR_NOCACHE_RAM_SECTION lp_fw_time_debug_t time_debug_buff[TIME_DEBUG_NUM_MAX] = { 0 };
     memset(time_debug_buff, 0, sizeof(time_debug_buff));
     iot2lp_para->time_debug = time_debug_buff;
 #endif
@@ -832,84 +424,10 @@ void bl_lp_fw_init(void)
 
 int bl_lp_init(void)
 {
-    assert(!gp_lp_env);
-
-    gp_lp_env = malloc(sizeof(struct lp_env));
-    assert(gp_lp_env);
-
-    memset(gp_lp_env, 0, sizeof(struct lp_env));
-
+    bl_lp_env_init();
     bl_lp_fw_init();
 
     return 0;
-}
-
-int bl_lp_sys_callback_register(bl_lp_cb_t enter_callback, void *enter_arg, bl_lp_cb_t exit_callback, void *exit_arg)
-{
-    assert(gp_lp_env);
-
-    if (enter_callback == NULL && exit_callback == NULL) {
-        return -1;
-    }
-
-    gp_lp_env->sys_pre_enter_callback = enter_callback;
-    gp_lp_env->sys_after_exit_callback = exit_callback;
-    gp_lp_env->sys_enter_arg = enter_arg;
-    gp_lp_env->sys_exit_arg = exit_arg;
-
-    return 0;
-}
-
-int bl_lp_user_callback_register(bl_lp_cb_t enter_callback, void *enter_arg, bl_lp_cb_t exit_callback, void *exit_arg)
-{
-    assert(gp_lp_env);
-
-    if (enter_callback == NULL && exit_callback == NULL) {
-        return -1;
-    }
-
-    gp_lp_env->user_pre_enter_callback = enter_callback;
-    gp_lp_env->user_after_exit_callback = exit_callback;
-    gp_lp_env->user_enter_arg = enter_arg;
-    gp_lp_env->user_exit_arg = exit_arg;
-
-    return 0;
-}
-
-void bl_lp_call_user_pre_enter(void)
-{
-    assert(gp_lp_env);
-
-    if (gp_lp_env->user_pre_enter_callback) {
-        gp_lp_env->user_pre_enter_callback(gp_lp_env->user_enter_arg);
-    }
-}
-
-void bl_lp_call_user_after_exit(void)
-{
-    assert(gp_lp_env);
-
-    if (gp_lp_env->user_after_exit_callback) {
-        gp_lp_env->user_after_exit_callback(gp_lp_env->user_exit_arg);
-    }
-}
-
-void bl_lp_call_sys_pre_enter(void)
-{
-    assert(gp_lp_env);
-
-    if (gp_lp_env->sys_pre_enter_callback) {
-        gp_lp_env->sys_pre_enter_callback(gp_lp_env->sys_enter_arg);
-    }
-}
-
-void bl_lp_call_sys_after_exit(void)
-{
-    assert(gp_lp_env);
-
-    if (gp_lp_env->sys_after_exit_callback) {
-        gp_lp_env->sys_after_exit_callback(gp_lp_env->sys_exit_arg);
-    }
 }
 
 static void bl_lp_vtime_before_sleep(void)
@@ -1071,13 +589,7 @@ int ATTR_TCM_SECTION bl_lp_fw_enter(bl_lp_fw_cfg_t *bl_lp_fw_cfg)
 
     HBN_Pin_WakeUp_Mask(0xFF);
 
-    if (gp_lp_io_cfg) {
-        iot2lp_para->wakeup_source_parameter->io_wakeup_parameter = (void *)gp_lp_io_cfg;
-        BL_LP_LOG("io_wakeup_unmask: 0x%llX\r\n",
-                  (unsigned long long)((lp_fw_gpio_cfg_t *)iot2lp_para->wakeup_source_parameter->io_wakeup_parameter)
-                      ->io_wakeup_unmask);
-        bl_lp_io_wakeup_init((lp_fw_gpio_cfg_t *)iot2lp_para->wakeup_source_parameter->io_wakeup_parameter);
-    }
+    bl618dg_lp_io_wakeup_prepare();
 
     /* app to sleep_pds, update time_info */
     bl_lp_time_info_update_app(iot2lp_para->lp_info);
@@ -1281,10 +793,7 @@ int ATTR_TCM_SECTION bl_lp_fw_enter(bl_lp_fw_cfg_t *bl_lp_fw_cfg)
             }
         }
 
-        /* register */
-        bflb_irq_attach(MSOFT_IRQn, (irq_callback)bl_lp_soft_irq, NULL);
-        /* trig soft int */
-        BL_LP_SOFT_INT_TRIG;
+        bl618dg_lp_soft_irq_trigger();
     }
 
     bl_lp_debug_record_time(iot2lp_para, "return APP");
@@ -1310,27 +819,6 @@ int ATTR_TCM_SECTION bl_lp_fw_enter(bl_lp_fw_cfg_t *bl_lp_fw_cfg)
 int bl_lp_get_wake_reason(void)
 {
     return (int)iot2lp_para->wakeup_reason_info->wakeup_reason;
-}
-
-void bl_lp_set_resume_wifi(void)
-{
-    assert(gp_lp_env);
-
-    gp_lp_env->wifi_hw_resume = 1;
-}
-
-void bl_lp_clear_resume_wifi(void)
-{
-    assert(gp_lp_env);
-
-    gp_lp_env->wifi_hw_resume = 0;
-}
-
-int bl_lp_get_resume_wifi(void)
-{
-    assert(gp_lp_env);
-
-    return gp_lp_env->wifi_hw_resume;
 }
 
 void bl_lp_debug_record_time(iot2lp_para_t *iot_lp_para, char *info_str)
@@ -1387,45 +875,4 @@ void bl_lp_debug_dump_time(iot2lp_para_t *iot_lp_para)
 
     BL_LP_LOG("\r\ndump end\r\n");
 #endif
-}
-
-
-int bl_lp_get_bcn_delay_ready(void)
-{
-    if (iot2lp_para->bcn_delay_info->bcn_delay_sliding_win_status <
-        iot2lp_para->bcn_delay_info->bcn_delay_sliding_win_size) {
-        return 0;
-    } else {
-        return 1;
-    }
-}
-
-
-ATTR_TCM_SECTION void bl_lp_bcn_loss_cnt_clear(void)
-{
-    if (!iot2lp_para->bcn_loss_info) {
-        return;
-    }
-
-    /* clear continuous loss cnt */
-    iot2lp_para->bcn_loss_info->continuous_loss_cnt = 0;
-    iot2lp_para->bcn_loss_info->bcn_loss_level = 0;
-}
-
-ATTR_TCM_SECTION void bl_lp_bcn_timestamp_update(uint64_t beacon_timestamp_us, uint64_t rtc_timestamp_us, uint32_t mode)
-{
-    /* update timestamp_us */
-    iot2lp_para->last_beacon_stamp_rtc_valid = mode;
-    iot2lp_para->last_beacon_stamp_rtc_us = rtc_timestamp_us;
-    iot2lp_para->last_beacon_stamp_beacon_us = beacon_timestamp_us;
-}
-
-ATTR_TCM_SECTION uint32_t bl_lp_get_beacon_interval_tu(void)
-{
-    return iot2lp_para->wifi_parameter->beacon_interval_tu;
-}
-
-ATTR_TCM_SECTION uint32_t bl_lp_get_dtim_num(void)
-{
-    return iot2lp_para->wifi_parameter->dtim_num;
 }

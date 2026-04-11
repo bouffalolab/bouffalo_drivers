@@ -10,23 +10,18 @@
         (field)[3] = (uint8_t)((value) >> 24); \
     } while (0)
 
-__UNUSED static void bflb_i2c_addr_config(struct bflb_device_s *dev, uint16_t slaveaddr, uint8_t *subaddr,
+#if !defined(BL616CL)
+static void bflb_i2c_addr_config(struct bflb_device_s *dev, uint16_t slaveaddr, uint8_t *subaddr,
                                           uint8_t subaddr_size, bool is_addr_10bit)
 {
     uint32_t regval;
     uint32_t reg_base;
-#if !defined(BL616CL)
     uint32_t subaddr_offset;
     uint8_t subaddr_idx;
-#endif
 
     reg_base = dev->reg_base;
 
-#if defined(BL616CL)
-    regval = getreg32(reg_base + I2C_CONFIG_1_OFFSET);
-#else
     regval = getreg32(reg_base + I2C_CONFIG_OFFSET);
-#endif
     if (subaddr_size > 0) {
         regval |= I2C_CR_I2C_SUB_ADDR_EN;
         regval &= ~I2C_CR_I2C_SUB_ADDR_BC_MASK;
@@ -34,33 +29,7 @@ __UNUSED static void bflb_i2c_addr_config(struct bflb_device_s *dev, uint16_t sl
     } else {
         regval &= ~I2C_CR_I2C_SUB_ADDR_EN;
     }
-#if defined(BL616CL)
-    putreg32(regval, reg_base + I2C_CONFIG_1_OFFSET);
-#else
     putreg32(regval, reg_base + I2C_CONFIG_OFFSET);
-#endif
-
-#if defined(BL616CL)
-    /* sub-address data is written to FIFO, not to a separate register */
-    if (subaddr_size > 0 && subaddr != NULL) {
-        uint8_t subaddr_idx = 0;
-        while (subaddr_idx < subaddr_size) {
-            if (subaddr_idx + 4 <= subaddr_size) {
-                regval = subaddr[subaddr_idx] | (subaddr[subaddr_idx + 1] << 8) | (subaddr[subaddr_idx + 2] << 16) |
-                         (subaddr[subaddr_idx + 3] << 24);
-                putreg32(regval, reg_base + I2C_FIFO_WDATA_OFFSET);
-                subaddr_idx += 4;
-            } else {
-                regval = 0;
-                for (uint8_t j = 0; subaddr_idx + j < subaddr_size; j++) {
-                    regval |= subaddr[subaddr_idx + j] << (j * 8);
-                }
-                putreg32(regval, reg_base + I2C_FIFO_WDATA_OFFSET);
-                break;
-            }
-        }
-    }
-#else
     subaddr_idx = 0;
     while (subaddr_idx < subaddr_size) {
         subaddr_offset = subaddr_idx & ~3;
@@ -88,7 +57,6 @@ __UNUSED static void bflb_i2c_addr_config(struct bflb_device_s *dev, uint16_t sl
             subaddr_idx += 4;
         }
     }
-#endif
 
     regval = getreg32(reg_base + I2C_CONFIG_OFFSET);
     regval &= ~I2C_CR_I2C_SLV_ADDR_MASK;
@@ -102,6 +70,7 @@ __UNUSED static void bflb_i2c_addr_config(struct bflb_device_s *dev, uint16_t sl
 #endif
     putreg32(regval, reg_base + I2C_CONFIG_OFFSET);
 }
+#endif
 
 static inline void bflb_i2c_set_dir(struct bflb_device_s *dev, bool is_in)
 {
@@ -292,6 +261,10 @@ static inline void bflb_i2c_disable(struct bflb_device_s *dev)
 #if defined(BL616CL)
     regval |= I2C_CR_I2C_M_TO_CLR;
     regval |= I2C_CR_I2C_RES_CLR;
+    putreg32(regval, reg_base + I2C_INT_STS_OFFSET);
+    /* M_TO_CLR needs a manual 1->0 sequence on BL616CL */
+    regval = getreg32(reg_base + I2C_INT_STS_OFFSET);
+    regval &= ~I2C_CR_I2C_M_TO_CLR;
 #endif
     putreg32(regval, reg_base + I2C_INT_STS_OFFSET);
 }
@@ -506,6 +479,7 @@ __UNUSED static int bflb_i2c_transfer_restart(struct bflb_device_s *dev, struct 
     uint32_t regval;
     uint32_t i;
     uint64_t start_time;
+    int ret = 0;
 
     for (i = 0; i < count; i++) {
         if (msgs[i].flags & I2C_M_RESTART) {
@@ -639,29 +613,47 @@ __UNUSED static int bflb_i2c_transfer_restart(struct bflb_device_s *dev, struct 
     for (i = 0; i < count; i++) {
         if (i < 2 && !(msgs[i].flags & I2C_M_RESTART)) {
             if (msgs[i].flags & I2C_M_NOSTOP) {
-                bflb_i2c_write_bytes_restart(dev, msgs[i].buffer, msgs[i].length);
+                ret = bflb_i2c_write_bytes_restart(dev, msgs[i].buffer, msgs[i].length);
+                if(ret < 0) {
+                    return ret;
+                }
                 bflb_i2c_enable(dev);
                 i++;
             }
             if (msgs[i].flags & I2C_M_READ) {
                 bflb_i2c_enable(dev);
-                bflb_i2c_read_bytes_restart(dev, msgs[i].buffer, msgs[i].length);
+                ret = bflb_i2c_read_bytes_restart(dev, msgs[i].buffer, msgs[i].length);
+                if(ret < 0) {
+                    return ret;
+                }
             } else {
-                bflb_i2c_write_bytes_restart(dev, msgs[i].buffer, msgs[i].length);
+                ret = bflb_i2c_write_bytes_restart(dev, msgs[i].buffer, msgs[i].length);
+                if(ret < 0) {
+                    return ret;
+                }
                 bflb_i2c_enable(dev);
             }
         } else {
             if (msgs[i].flags & I2C_M_RESTART) {
                 if (msgs[i].flags & I2C_M_NOSTOP) {
-                    bflb_i2c_write_bytes_restart(dev, msgs[i].buffer, msgs[i].length);
+                    ret = bflb_i2c_write_bytes_restart(dev, msgs[i].buffer, msgs[i].length);
+                    if(ret < 0) {
+                        return ret;
+                    }
                     bflb_i2c_enable(dev);
                     i++;
                 }
                 if (msgs[i].flags & I2C_M_READ) {
                     bflb_i2c_enable(dev);
-                    bflb_i2c_read_bytes_restart(dev, msgs[i].buffer, msgs[i].length);
+                    ret = bflb_i2c_read_bytes_restart(dev, msgs[i].buffer, msgs[i].length);
+                    if(ret < 0) {
+                        return ret;
+                    }
                 } else {
-                    bflb_i2c_write_bytes_restart(dev, msgs[i].buffer, msgs[i].length);
+                    ret = bflb_i2c_write_bytes_restart(dev, msgs[i].buffer, msgs[i].length);
+                    if(ret < 0) {
+                        return ret;
+                    }
                     bflb_i2c_enable(dev);
                 }
             }
@@ -785,19 +777,24 @@ int bflb_i2c_transfer(struct bflb_device_s *dev, struct bflb_i2c_msg_s *msgs, in
 #ifdef romapi_bflb_i2c_transfer
     return romapi_bflb_i2c_transfer(dev, msgs, count);
 #else
-    uint16_t subaddr_size = 0;
-    bool is_addr_10bit = false;
     int ret = 0;
     uint32_t i;
 
 #if defined(BL616CL)
-    for (i = 0; i < count; i++) {
-        if (msgs[i].flags & I2C_M_RESTART) {
-            bflb_i2c_transfer_restart(dev, msgs, count);
-            return 0;
+    if (count > 0) {
+        for (i = 2; i < count; i++) {
+            if ((msgs[i].flags & I2C_M_RESTART) == 0) {
+                return -EINVAL;
+            }
+        }
+        ret = bflb_i2c_transfer_restart(dev, msgs, count);
+        if (ret < 0) {
+            return ret;
         }
     }
-#endif
+#else
+    uint16_t subaddr_size = 0;
+    bool is_addr_10bit = false;
 
     if (count > 2) {
         return -EINVAL;
@@ -819,9 +816,7 @@ int bflb_i2c_transfer(struct bflb_device_s *dev, struct bflb_i2c_msg_s *msgs, in
             subaddr_size = 0;
             bflb_i2c_addr_config(dev, msgs[i].addr, msgs[i].buffer, subaddr_size, is_addr_10bit);
         }
-#if defined(BL616CL)
-        if (msgs[i].length > 1024) {
-#elif defined(BL618DG)
+#if defined(BL618DG)
         if (msgs[i].length > 4096) {
 #else
         if (msgs[i].length > 256) {
@@ -851,7 +846,7 @@ int bflb_i2c_transfer(struct bflb_device_s *dev, struct bflb_i2c_msg_s *msgs, in
             }
         }
     }
-
+#endif
     return 0;
 #endif
 }
@@ -866,9 +861,9 @@ void bflb_i2c_int_mask(struct bflb_device_s *dev, uint32_t int_type, bool mask)
 
     reg_base = dev->reg_base;
     regval = getreg32(reg_base + I2C_INT_STS_OFFSET);
-    regval &= ~((int_type & 0xff) << 8);
+    regval &= ~((int_type & I2C_INTEN_ALL) << 8);
     if (mask) {
-        regval |= (int_type & 0xff) << 8;
+        regval |= (int_type & I2C_INTEN_ALL) << 8;
     }
     putreg32(regval, reg_base + I2C_INT_STS_OFFSET);
 #endif
@@ -884,16 +879,19 @@ void bflb_i2c_int_clear(struct bflb_device_s *dev, uint32_t int_clear)
 
     reg_base = dev->reg_base;
     regval = getreg32(reg_base + I2C_INT_STS_OFFSET);
-    regval |= (int_clear & 0xff) << 16;
-#if defined(BL616CL)
+#if !defined(BL616CL)
+    regval |= (int_clear & I2C_INTCLR_ALL) << 16;
+    putreg32(regval, reg_base + I2C_INT_STS_OFFSET);
+#else
+    regval |= (int_clear & I2C_INTCLR_ALL) << 15;
+    putreg32(regval, reg_base + I2C_INT_STS_OFFSET);
     if (int_clear & I2C_INTCLR_TIMEOUT) {
-        regval |= I2C_CR_I2C_M_TO_CLR;
-    }
-    if (int_clear & I2C_INTCLR_RESTART) {
-        regval |= I2C_CR_I2C_RES_CLR;
+        regval = getreg32(reg_base + I2C_INT_STS_OFFSET);
+        regval &= ~I2C_CR_I2C_M_TO_CLR;
+        putreg32(regval, reg_base + I2C_INT_STS_OFFSET);
     }
 #endif
-    putreg32(regval, reg_base + I2C_INT_STS_OFFSET);
+
 #endif
 }
 
@@ -905,11 +903,7 @@ uint32_t bflb_i2c_get_intstatus(struct bflb_device_s *dev)
     uint32_t reg_base;
 
     reg_base = dev->reg_base;
-#if defined(BL616CL)
-    return (getreg32(reg_base + I2C_INT_STS_OFFSET) & 0x4040007f);
-#else
-    return (getreg32(reg_base + I2C_INT_STS_OFFSET) & 0x7f);
-#endif
+    return (getreg32(reg_base + I2C_INT_STS_OFFSET) & I2C_INTSTS_ALL);
 #endif
 }
 

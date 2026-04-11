@@ -209,10 +209,6 @@ if(("${CHIP}" STREQUAL "bl618dg") OR ("${CHIP}" STREQUAL "bl616cl"))
     add_subdirectory(src/pec_v2_instance)
 endif()
 
-sdk_add_private_compile_definitions_ifdef(
-    CONFIG_FLASH_2LINE -D${CONFIG_FLASH_2LINE}
-)
-
  if("${CHIP}" STREQUAL "bl616cl")
     sdk_add_compile_definitions(-D CONFIG_LHAL_ROMAPI)
     sdk_library_add_sources(config/${CHIP}/bflb_lhal_romapi_patch.c)

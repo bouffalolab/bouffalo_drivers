@@ -92,6 +92,13 @@ int bl_sys_em_config(void)
     return 0;
 }
 
+int bl_sys_em_free(void)
+{
+    /* Return EM region back to WRAM (EM size = 0) */
+    GLB_Set_EM_Sel(GLB_WRAM160KB_EM0KB);
+    return 0;
+}
+
 int bl_sys_reset_por(void)
 {
     HBN_32K_Sel(0); // f32k select rc32k

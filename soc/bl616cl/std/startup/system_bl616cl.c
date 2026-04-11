@@ -33,32 +33,29 @@ static void Tzc_Sec_PSRAMB_Access_Set_Not_Lock(uint8_t region, uint32_t startAdd
 #if (!defined(CONFIG_PMP_NO_INIT) && !defined(CONFIG_BOOT2))
 
 static const pmp_config_entry_t pmp_entry_tab[16] = {
-    /* unused */
-    [8] = { .entry_flag = ENTRY_FLAG_ADDR_OFF },
-
     /* 0x20000000 ~ 0x30000000, size:256M, peripherals/wireless/nocache_ram */
-    [9] = {
+    [8] = {
         .entry_flag = ENTRY_FLAG_ADDR_NAPOT | ENTRY_FLAG_M_MODE_L | ENTRY_FLAG_PERM_R | ENTRY_FLAG_PERM_W | ENTRY_FLAG_PERM_X,
         .entry_pa_base = 0x20000000,
         .entry_pa_length = PMP_REG_SZ_256M,
     },
 
     /* 0x60000000 ~ 0x62000000, size:32M, ocram/wram */
-    [10] = {
+    [9] = {
         .entry_flag = ENTRY_FLAG_ADDR_NAPOT | ENTRY_FLAG_M_MODE_L | ENTRY_FLAG_PERM_R | ENTRY_FLAG_PERM_W | ENTRY_FLAG_PERM_X,
         .entry_pa_base = 0x60000000,
         .entry_pa_length = PMP_REG_SZ_32M,
     },
 
     /* base:0x90000000 ~ 0x90040000, size:256K, rom */
-    [11] = {
+    [10] = {
         .entry_flag = ENTRY_FLAG_ADDR_NAPOT | ENTRY_FLAG_M_MODE_L | ENTRY_FLAG_PERM_R | ENTRY_FLAG_PERM_X,
         .entry_pa_base = 0x90000000,
         .entry_pa_length = PMP_REG_SZ_256K,
     },
 
     /* 0x80000000 ~ 0x84000000, size:64M, flash */
-    [12] = {
+    [11] = {
         .entry_flag = ENTRY_FLAG_ADDR_NAPOT | ENTRY_FLAG_M_MODE_L | ENTRY_FLAG_PERM_R | ENTRY_FLAG_PERM_X,
         .entry_pa_base = 0x80000000,
         .entry_pa_length = PMP_REG_SZ_64M,
@@ -66,7 +63,7 @@ static const pmp_config_entry_t pmp_entry_tab[16] = {
 
 #ifdef CONFIG_PSRAM
     /* 0x88000000 ~ 0x89000000, size:16M, psram */
-    [13] = {
+    [12] = {
         .entry_flag = ENTRY_FLAG_ADDR_NAPOT | ENTRY_FLAG_M_MODE_L | ENTRY_FLAG_PERM_R | ENTRY_FLAG_PERM_W | ENTRY_FLAG_PERM_X,
         .entry_pa_base = 0x88000000,
         .entry_pa_length = PMP_REG_SZ_16M,
@@ -74,10 +71,17 @@ static const pmp_config_entry_t pmp_entry_tab[16] = {
 #endif
 
     /* 0xE0000000 ~ 0xF0000000, size:256M, cpu reg */
-    [14] = {
+    [13] = {
         .entry_flag = ENTRY_FLAG_ADDR_NAPOT | ENTRY_FLAG_M_MODE_L | ENTRY_FLAG_PERM_R | ENTRY_FLAG_PERM_W,
         .entry_pa_base = 0xE0000000,
         .entry_pa_length = PMP_REG_SZ_256M,
+    },
+
+     /* 0xF000000 ~ 0xF000080, size:128Byte, CPU ID, cacheable */
+    [14] = {
+        .entry_flag = ENTRY_FLAG_ADDR_NAPOT | ENTRY_FLAG_M_MODE_L | ENTRY_FLAG_PERM_R,
+        .entry_pa_base = 0xF0000000,
+        .entry_pa_length = PMP_REG_SZ_128B,
     },
 
     /* base:0x00000000, size:4G, All remaining address Spaces */

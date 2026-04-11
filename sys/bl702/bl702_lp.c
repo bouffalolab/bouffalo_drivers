@@ -46,6 +46,9 @@ bl_lp_fw_cfg_t lpfw_cfg = {
     .rtc_timeout_us = (1 * 1000 * 1000),
     .pds_timeout_us = (10 * 1000 * 1000),
 };
+#if (BL_LP_TIME_DEBUG)
+static lp_fw_time_debug_t time_debug_buff[TIME_DEBUG_NUM_MAX] = { 0 };
+#endif
 
 /* EM Select, will get from glb register */
 static uint8_t emSel = 0;
@@ -225,8 +228,6 @@ void bl_lp_fw_init()
     memset(iot2lp_para, 0, (uint32_t)&iot2lp_para->reset_keep - (uint32_t)iot2lp_para);
 
 #if (BL_LP_TIME_DEBUG)
-    /* nocache ram */
-    static lp_fw_time_debug_t time_debug_buff[TIME_DEBUG_NUM_MAX] = { 0 };
     iot2lp_para->time_debug = (void *)((uint32_t)time_debug_buff & 0x4FFFFFFF);
     bl_lp_debug_clean_time(iot2lp_para);
 #endif

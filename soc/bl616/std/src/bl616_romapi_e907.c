@@ -909,7 +909,7 @@ BL_Err_Type GLB_WIFIPLL_Ref_Clk_Sel(uint8_t refClk){
 
 __ALWAYS_INLINE ATTR_TCM_SECTION
 uint8_t GLB_Get_Core_Type(void){
-    return RomDriver_GLB_Get_Core_Type();
+    return GLB_CORE_ID_M0; //RomDriver_GLB_Get_Core_Type();
 }
 
 __ALWAYS_INLINE ATTR_TCM_SECTION

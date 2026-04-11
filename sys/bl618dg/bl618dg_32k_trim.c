@@ -137,6 +137,11 @@ update_tsf:
     return ret;
 }
 
+void bl_lp_rc32k_save_code(uint32_t code)
+{
+    iot2lp_para->rc32k_trim_parameter->rc32k_fr_ext = code;
+}
+
 int bl_lp_rtc_rc32k_coarse_adj(uint32_t expect_time, uint32_t rc32k_actual_time)
 {
     int diff_val, diff_ppm, diff_code;

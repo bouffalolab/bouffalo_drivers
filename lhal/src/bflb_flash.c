@@ -387,7 +387,11 @@ static int ATTR_TCM_SECTION flash_config_init(spi_flash_cfg_type *p_flash_cfg, u
 #error flash 2 line only supports 0x11 or 0x13
 #endif
     p_flash_cfg->io_mode = CONFIG_FLASH_2LINE;
+#if (CONFIG_FLASH_2LINE == 0x11)
     p_flash_cfg->c_read_support = 0x00;
+#elif (CONFIG_FLASH_2LINE == 0x13)
+    p_flash_cfg->c_read_support = 0x01;
+#endif
 #endif
     /* Set flash controler from p_flash_cfg */
 #if defined(BL616) || defined(BL616CL) || defined(BL618DG)   

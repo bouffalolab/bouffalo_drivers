@@ -157,11 +157,11 @@ const pmp_config pmp_entry_tab[] = {
     },
 #endif
 
-    /* 0xF000000 ~ 0xF000040, size:64Byte, CPU ID, cacheable */
+    /* 0xF000000 ~ 0xF0001000, size:4K Byte, CPU ID, cacheable */
     {
         .protection = PMP_L | PMP_R,
         .base_addr = 0xF0000000,
-        .order = 6, /* 2^6 = 64B */
+        .order = 12, /* 2^12 = 4K */
     },
 
     /* base:0x00000000, size:4G, All remaining address Spaces */

@@ -103,7 +103,7 @@ void PSram_Ctrl_Init(PSRAM_ID_Type PSRAM_ID, PSRAM_Ctrl_Cfg_Type *psramCtrlCfg)
     CHECK_PARAM(IS_PSRAM_CTRL_CFG_TYPE(psramCtrlCfg));
 
     //PSRAM initial sequence
-    arch_delay_us(150);
+    // arch_delay_us(150);
     /* set psram dqs delay 0xfff0 */
     tmpVal = BL_RD_REG(psram_base, PSRAM_ROUGH_DELAY_CTRL5);
     tmpVal = BL_SET_REG_BITS_VAL(tmpVal, PSRAM_REG_ROUGH_SEL_I_DQS0, psramCtrlCfg->dqs_delay);
@@ -449,6 +449,77 @@ void PSram_Ctrl_Winbond_Reset(PSRAM_ID_Type PSRAM_ID)
     tmpVal = BL_RD_REG(psram_base, PSRAM_WINBOND_PSRAM_CONFIGURE);
     tmpVal = BL_SET_REG_BIT(tmpVal, PSRAM_REG_WB_SW_RST);
     BL_WR_REG(psram_base, PSRAM_WINBOND_PSRAM_CONFIGURE, tmpVal);
+}
+
+/****************************************************************************/ /**
+ * @brief  set Hybrid Sleep mode for Winbond PSRAM
+ *
+ * @param  PSRAM_ID: PSRAM ID
+ * @param  sleepMode: Hybrid Sleep mode
+ *
+ * @return SUCCESS or TIMEOUT
+ *
+*******************************************************************************/
+BL_Err_Type PSram_Ctrl_Winbond_Hybrid_Sleep_Set(PSRAM_ID_Type PSRAM_ID, PSRAM_Hybrid_Sleep_Mode sleepMode)
+{
+    uint32_t tmpVal = 0;
+    uint32_t psram_base = PSRAM_CTRL_BASE + (0x1000 * PSRAM_ID);
+    uint32_t time_out = 0;
+
+    CHECK_PARAM(IS_PSRAM_ID_TYPE(PSRAM_ID));
+    CHECK_PARAM(IS_PSRAM_HYBRID_SLEEP_MODE(sleepMode));
+
+    PSram_Ctrl_Request(PSRAM_ID);
+
+    tmpVal = BL_RD_REG(psram_base, PSRAM_WINBOND_PSRAM_CONFIGURE);
+    tmpVal = BL_SET_REG_BITS_VAL(tmpVal, PSRAM_REG_WB_HYBRID_SLP, sleepMode);
+    BL_WR_REG(psram_base, PSRAM_WINBOND_PSRAM_CONFIGURE, tmpVal);
+
+    tmpVal = BL_RD_REG(psram_base, PSRAM_CONFIGURE);
+    tmpVal = BL_SET_REG_BITS_VAL(tmpVal, PSRAM_REG_WB_REG_SEL, PSRAM_WINBOND_REG_CR1);
+    BL_WR_REG(psram_base, PSRAM_CONFIGURE, tmpVal);
+
+    tmpVal = BL_RD_REG(psram_base, PSRAM_CONFIGURE);
+    tmpVal = BL_SET_REG_BITS_VAL(tmpVal, PSRAM_REG_CONFIG_W_PUSLE, 1);
+    BL_WR_REG(psram_base, PSRAM_CONFIGURE, tmpVal);
+
+    do {
+        tmpVal = BL_RD_REG(psram_base, PSRAM_CONFIGURE);
+        if (time_out++ > PSRAM_X8_CTRL_WAIT_TIMEOUT) {
+            PSram_Ctrl_Release(PSRAM_ID);
+            return TIMEOUT;
+        }
+    } while (!BL_IS_REG_BIT_SET(tmpVal, PSRAM_STS_CONFIG_W_DONE));
+
+    PSram_Ctrl_Release(PSRAM_ID);
+
+    return SUCCESS;
+}
+
+/****************************************************************************/ /**
+ * @brief  enter Hybrid Sleep mode for Winbond PSRAM
+ *
+ * @param  PSRAM_ID: PSRAM ID
+ *
+ * @return SUCCESS or TIMEOUT
+ *
+*******************************************************************************/
+BL_Err_Type PSram_Ctrl_Winbond_Enter_Hybrid_Sleep(PSRAM_ID_Type PSRAM_ID)
+{
+    return PSram_Ctrl_Winbond_Hybrid_Sleep_Set(PSRAM_ID, PSRAM_HYBRID_SLEEP_ENABLE);
+}
+
+/****************************************************************************/ /**
+ * @brief  exit Hybrid Sleep mode for Winbond PSRAM
+ *
+ * @param  PSRAM_ID: PSRAM ID
+ *
+ * @return SUCCESS or TIMEOUT
+ *
+*******************************************************************************/
+BL_Err_Type PSram_Ctrl_Winbond_Exit_Hybrid_Sleep(PSRAM_ID_Type PSRAM_ID)
+{
+    return PSram_Ctrl_Winbond_Hybrid_Sleep_Set(PSRAM_ID, PSRAM_HYBRID_SLEEP_DISABLE);
 }
 
 /****************************************************************************/ /**

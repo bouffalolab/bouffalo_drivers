@@ -2,6 +2,7 @@
 #define __BL616CL_LP_H__
 #include <stdint.h>
 #include "bl616cl_xip_recovery.h"
+#include "bl616cl_psram_recovery.h"
 
 typedef int (*bl_lp_cb_t)(void *arg);
 
@@ -262,6 +263,8 @@ typedef struct {
 typedef struct {
     uint32_t pattern; /*0xAA5555AA*/
     lp_fw_static_variable_t *lpfw_static_val;
+    /* psram recovery */
+    bl_lp_psram_cfg_t *psram_parameter;
     /* flash recovery */
     sf_recovery_para_t *flash_parameter;
     /* sec information */
@@ -414,6 +417,7 @@ void bl_lp_call_sys_after_exit(void);
 
 int bl_lp_init(void);
 int bl_lp_fw_enter(bl_lp_fw_cfg_t *bl_lp_fw_cfg);
+int bl_lp_pds_enter_with_restore(uint32_t pds_level, uint32_t sleep_time);
 
 void bl_lp_set_resume_wifi(void);
 void bl_lp_clear_resume_wifi(void);

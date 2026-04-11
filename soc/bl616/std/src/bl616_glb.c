@@ -1252,6 +1252,7 @@ BL_Err_Type ATTR_CLOCK_SECTION GLB_Set_MCU_System_CLK(uint8_t clkFreq)
 *******************************************************************************/
 uint8_t ATTR_CLOCK_SECTION GLB_Get_Core_Type(void)
 {
+#if 0
     uint32_t tmpVal = 0;
 
     tmpVal = BL_RD_WORD(CORE_ID_ADDRESS);
@@ -1264,6 +1265,9 @@ uint8_t ATTR_CLOCK_SECTION GLB_Get_Core_Type(void)
     }
 
     return GLB_CORE_ID_INVALID;
+#else
+    return GLB_CORE_ID_M0;
+#endif
 }
 
 /****************************************************************************/ /**

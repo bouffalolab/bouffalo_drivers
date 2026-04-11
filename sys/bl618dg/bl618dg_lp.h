@@ -449,6 +449,7 @@ int bl_lp_set_32k_clock_ready(uint8_t ready_val);
 int bl_lp_get_32k_clock_ready(void);
 int bl_lp_set_32k_trim_ready(uint8_t ready_val);
 int bl_lp_get_32k_trim_ready(void);
+void bl_lp_rc32k_save_code(uint32_t code);
 
 char *bl_lpfw_bin_get_version_str(void);
 
@@ -457,7 +458,10 @@ void bl_lp_bcn_timestamp_update(uint64_t beacon_timestamp_us, uint64_t rtc_times
 
 uint32_t bl_lp_get_beacon_interval_tu(void);
 uint32_t bl_lp_get_dtim_num(void);
+int bl_lp_get_bcn_delay_ready(void);
 
 int bl_lp_io_wakeup_cfg(void *io_wakeup_cfg);
+int bl_lp_wakeup_io_get_mode(uint8_t io_num);
+void bl_lp_wakeup_io_int_register(void (*wakeup_io_callback)(uint64_t wake_up_io_bits));
 
 #endif

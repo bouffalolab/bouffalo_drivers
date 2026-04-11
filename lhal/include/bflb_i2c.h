@@ -64,6 +64,9 @@
 #if defined(BL616CL)
 #define I2C_INTSTS_TIMEOUT (1 << 6)  /* Master timeout interrupt */
 #define I2C_INTSTS_RESTART (1 << 22) /* Repeated start interrupt */
+#define I2C_INTSTS_ALL     ((((1 << 7) - 1) | (1 << 22)))
+#else
+#define I2C_INTSTS_ALL     ((1 << 6) - 1)
 #endif
 /**
  * @}
@@ -72,12 +75,18 @@
 /** @defgroup I2C_INTCLR i2c interrupt clear definition
   * @{
   */
-#define I2C_INTCLR_END  (1 << 0) /* Transfer end interrupt */
-#define I2C_INTCLR_NACK (1 << 3) /* NACK interrupt */
-#define I2C_INTCLR_ARB  (1 << 4) /* Arbitration lost interrupt */
-#if defined(BL616CL)
-#define I2C_INTCLR_TIMEOUT (1 << 2)  /* Master timeout interrupt */
-#define I2C_INTCLR_RESTART (1 << 15) /* Repeated start interrupt */
+#if !defined(BL616CL)
+#define I2C_INTCLR_END     (1 << 0) /* Transfer end interrupt */
+#define I2C_INTCLR_NACK    (1 << 3) /* NACK interrupt */
+#define I2C_INTCLR_ARB     (1 << 4) /* Arbitration lost interrupt */
+#define I2C_INTCLR_ALL     ((1 << 0) | (1 << 3) | (1 << 4))
+#else
+#define I2C_INTCLR_RESTART (1 << 0) /* Repeated start interrupt */
+#define I2C_INTCLR_END     (1 << 1) /* Transfer end interrupt */
+#define I2C_INTCLR_TIMEOUT (1 << 3)  /* Master timeout interrupt */
+#define I2C_INTCLR_NACK    (1 << 4) /* NACK interrupt */
+#define I2C_INTCLR_ARB     (1 << 5) /* Arbitration lost interrupt */
+#define I2C_INTCLR_ALL     ((1 << 6) - 1)
 #endif
 /**
  * @}
@@ -94,7 +103,10 @@
 #define I2C_INTEN_FER     (1 << 5) /* TX/RX FIFO error interrupt */
 #if defined(BL616CL)
 #define I2C_INTEN_TIMEOUT (1 << 6)  /* Master timeout interrupt */
-#define I2C_INTEN_RESTART (1 << 31) /* Repeated start interrupt */
+#define I2C_INTEN_RESTART (1 << 15) /* Repeated start interrupt */
+#define I2C_INTEN_ALL     ((((1 << 7) - 1) | (1 << 15)))
+#else
+#define I2C_INTEN_ALL     ((1 << 6) - 1)
 #endif
 /**
  * @}
