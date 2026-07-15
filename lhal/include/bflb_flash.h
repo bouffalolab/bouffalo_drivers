@@ -30,6 +30,9 @@
 #define FLASH_AES_KEY_192BITS        2
 #define FLASH_AES_KEY_256BITS        1
 #define FLASH_AES_KEY_DOUBLE_128BITS 3
+
+/** Wait indefinitely when acquiring the platform flash resource lock. */
+#define BFLB_FLASH_RESOURCE_WAIT_FOREVER UINT32_MAX
 /**
   * @}
   */
@@ -121,6 +124,30 @@ void bflb_flash_set_iomode(uint8_t iomode);
  * @return flash image offset
  */
 uint32_t bflb_flash_get_image_offset(void);
+
+/**
+ * @brief Acquire exclusive access to the flash/XIP resource.
+ *
+ * The weak default implementation returns -ENOSYS. A platform that defines
+ * CONFIG_DISABLE_FLASH_OP_IRQ_SAVE_RESTORE must override this hook. The hook,
+ * its complete call path, and all state accessed while flash XIP is unavailable
+ * must reside in RAM, PSRAM, or ROM. ISR implementations must not block.
+ * DMA users that access flash XIP must hold the same resource for the complete
+ * DMA transfer.
+ *
+ * @param [in] timeout_ms maximum wait time in milliseconds, or
+ *                        BFLB_FLASH_RESOURCE_WAIT_FOREVER
+ * @return Zero on success; a negated errno value on failure
+ */
+int bflb_flash_resource_lock(uint32_t timeout_ms);
+
+/**
+ * @brief Release exclusive access to the flash/XIP resource.
+ *
+ * This must be paired with a successful bflb_flash_resource_lock() call and
+ * released by an execution context permitted by the platform lock policy.
+ */
+void bflb_flash_resource_unlock(void);
 
 /**
  * @brief Erase flash with sectors.

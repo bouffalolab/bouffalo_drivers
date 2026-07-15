@@ -778,14 +778,11 @@ int bflb_i2c_transfer(struct bflb_device_s *dev, struct bflb_i2c_msg_s *msgs, in
     return romapi_bflb_i2c_transfer(dev, msgs, count);
 #else
     int ret = 0;
-    uint32_t i;
 
 #if defined(BL616CL)
     if (count > 0) {
-        for (i = 2; i < count; i++) {
-            if ((msgs[i].flags & I2C_M_RESTART) == 0) {
-                return -EINVAL;
-            }
+        if ((count > 2) && ((msgs[2].flags & I2C_M_RESTART) == 0)) {
+            return -EINVAL;
         }
         ret = bflb_i2c_transfer_restart(dev, msgs, count);
         if (ret < 0) {
@@ -793,6 +790,7 @@ int bflb_i2c_transfer(struct bflb_device_s *dev, struct bflb_i2c_msg_s *msgs, in
         }
     }
 #else
+    uint32_t i;
     uint16_t subaddr_size = 0;
     bool is_addr_10bit = false;
 

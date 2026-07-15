@@ -100,7 +100,9 @@ struct wl_param_pwrcal_t
     int8_t      channel_5g_lp_pwrcomp_wlan[8]; // power compensation at low power mode
     int8_t      Temperature_MP; // temperature of sensor while power cal at production line
     int8_t      channel_pwrcomp_bz[NUM_BZ_CH_PWRCOMP];
+    int8_t      channel_lp_pwrcomp_bz[NUM_BZ_CH_PWRCOMP];
     int8_t      channel_pwrcomp_bz_only[NUM_BZ_CH_PWRCOMP];
+    int8_t      channel_lp_pwrcomp_bz_only[NUM_BZ_CH_PWRCOMP];
 };
 
 // Power vs Rate table in 0.25dBm
@@ -242,7 +244,7 @@ struct wl_cfg_t
     int (*log_printf)(const char *format, ...);
 
     uint8_t     log_level;
-    uint8_t     device_info; // QFN40,QFN40M,QFN56
+    uint8_t     device_info; // QFN48,QFN56,QFN68
 };
 
 /**
@@ -345,7 +347,8 @@ void wl_rf_set_bz_target_power_table(int8_t target_pwr_dbm);// modified the bz p
 void wl_rf_set_154_tx_power(uint32_t target_pwr_dbm);
 int8_t wl_rf_set_154_tx_power_with_power_limit(uint32_t target_pwr_dbm, uint8_t channel_idx, const char *country_code);
 void wl_rf_cfg_init(void);//set default values to rf members of struct, //by Lx
-void wl_rf_set_channel_pwr_comp(uint8_t channel_idx);
+void wl_rf_set_channel_pwr_comp(uint8_t channel_idx); // useless in 616d
+void wl_rf_set_dual_channel_pwr_comp(uint16_t chanfreq_MHz);
 void wl_rf_set_bz_channel_pwr_comp(void);
 void wl_rf_set_status(uint8_t combo_rf_en);// turn on/off combo rf domain
 void wl_standalone_rf_set_status(uint8_t standalone_rf_en);// turn on/off standalone rf domain
@@ -356,7 +359,7 @@ void wl_rf_temp_optimize(int16_t temperature); // rf optimize for temperature
 // *BZ_STAND_ALONE_RF_EN=1 : standalone-bz rf and combo-bz rf both enable, but default bz rf is standalone bz rf 
 // *BZ_STAND_ALONE_RF_EN=0 : combo-bz rf both enable, and disable stand-alone bz rf 
 #ifndef BZ_STAND_ALONE_RF_EN
-#define BZ_STAND_ALONE_RF_EN (0)
+#define BZ_STAND_ALONE_RF_EN (1)
 #endif
 
 // if build the LPFW, please define 1 

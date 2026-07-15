@@ -218,6 +218,7 @@ BL_Err_Type AON_Set_Ldo_Soc_Vout_in_Lowpower(uint8_t level) {
     return RomDriver_AON_Set_Ldo_Soc_Vout_in_Lowpower(level);
 }
 
+#if 0
 __ALWAYS_INLINE ATTR_TCM_SECTION
 BL_Err_Type AON_Ctrl_Ldo18_Aon_Mode_by_HW(uint8_t enable) {
     return RomDriver_AON_Ctrl_Ldo18_Aon_Mode_by_HW(enable);
@@ -247,6 +248,7 @@ __ALWAYS_INLINE ATTR_TCM_SECTION
 BL_Err_Type AON_Set_Ldo_Soc_Mode(uint8_t mode) {
     return RomDriver_AON_Set_Ldo_Soc_Mode(mode);
 }
+#endif
 
 __ALWAYS_INLINE ATTR_TCM_SECTION
 BL_Err_Type AON_Set_Dcdc_Sys_Sstart_Delay(uint8_t delay) {
@@ -441,10 +443,12 @@ int bflb_efuse_get_chipid(uint8_t chipid[8]) {
     return RomDriver_bflb_efuse_get_chipid(chipid);
 }
 
+#if 0
 __ALWAYS_INLINE ATTR_TCM_SECTION
 uint8_t bflb_efuse_is_mac_address_slot_empty(uint8_t slot, uint8_t reload) {
     return RomDriver_bflb_efuse_is_mac_address_slot_empty(slot, reload);
 }
+#endif
 
 #if 0
 __ALWAYS_INLINE ATTR_TCM_SECTION
@@ -453,10 +457,12 @@ int bflb_efuse_write_mac_address_opt(uint8_t slot, uint8_t mac[6], uint8_t progr
 }
 #endif
 
+#if 0
 __ALWAYS_INLINE ATTR_TCM_SECTION
 int bflb_efuse_read_mac_address_opt(uint8_t slot, uint8_t mac[6], uint8_t reload) {
     return RomDriver_bflb_efuse_read_mac_address_opt(slot, mac, reload);
 }
+#endif
 
 #if 0
 __ALWAYS_INLINE ATTR_TCM_SECTION

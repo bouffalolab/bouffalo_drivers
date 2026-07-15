@@ -127,6 +127,16 @@ void bl_sys_reset_system(void)
     }
 }
 
+void bl_sys_reset_system_from_interface(void)
+{
+    __disable_irq();
+    HBN_Set_User_Boot_Config(1);
+    bl_sys_reset_por();
+    while (1) {
+        /*empty dead loop*/
+    }
+}
+
 #define SYSMAP_BASE_OFFSET       (12)
 #define SYSMAP_ATTR_STRONG_ORDER (1 << 4)
 #define SYSMAP_ATTR_CACHE_ABLE   (1 << 3)

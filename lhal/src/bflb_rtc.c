@@ -344,7 +344,7 @@ static time_t __mktime(struct bflb_tm *tp)
 #define BL_RTC_COUNTER_TO_MS(CNT) ((uint64_t)(CNT)*1000 / 32768) // ((CNT)*(1024-16-8)/32768)
 #define BL_RTC_MAX_COUNTER        (0x000000FFFFFFFFFFllu)
 
-uint64_t bl_rtc_get_delta_counter(uint64_t ref_cnt)
+uint64_t bflb_rtc_get_delta_counter(uint64_t ref_cnt)
 {
     uint64_t cnt;
 
@@ -358,11 +358,11 @@ uint64_t bl_rtc_get_delta_counter(uint64_t ref_cnt)
     return cnt - ref_cnt;
 }
 
-uint64_t bl_rtc_get_delta_time_ms(uint64_t ref_cnt)
+uint64_t bflb_rtc_get_delta_time_ms(uint64_t ref_cnt)
 {
     uint64_t cnt;
 
-    cnt = bl_rtc_get_delta_counter(ref_cnt);
+    cnt = bflb_rtc_get_delta_counter(ref_cnt);
 
     return BL_RTC_COUNTER_TO_MS(cnt);
 }
@@ -380,7 +380,7 @@ void bflb_rtc_get_utc_time(struct bflb_tm *time)
 {
     uint64_t time_stamp_ms;
 
-    time_stamp_ms = bl_rtc_get_delta_time_ms(s_rtc_ref_cnt);
+    time_stamp_ms = bflb_rtc_get_delta_time_ms(s_rtc_ref_cnt);
     time_stamp_ms = time_stamp_ms / 1000;
     time_stamp_ms += __mktime((struct bflb_tm *)&g_rtc_tm);
     __gmtime_r((const time_t *)&time_stamp_ms, time);
@@ -390,7 +390,7 @@ uint64_t bflb_rtc_get_utc_timestamp(void)
 {
     uint64_t time_stamp_ms;
 
-    time_stamp_ms = bl_rtc_get_delta_time_ms(s_rtc_ref_cnt);
+    time_stamp_ms = bflb_rtc_get_delta_time_ms(s_rtc_ref_cnt);
     time_stamp_ms = time_stamp_ms / 1000;
     time_stamp_ms += __mktime((struct bflb_tm *)&g_rtc_tm);
 

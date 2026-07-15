@@ -23,6 +23,7 @@
 #include "bflb_core.h"
 #include <csi_core.h>
 #include "irq_ctx.h"
+#include "bl616cl_sys.h"
 
 typedef void (*pFunc)(void);
 
@@ -161,18 +162,27 @@ void exception_entry(uintptr_t *regs)
     if ((cause == 8) || (cause == 11)) {
         epc += 4;
         WRITE_CSR(CSR_MEPC, epc);
-    } else {
-        while (1) {
-#ifdef CONFIG_COREDUMP
-            /* For stack check */
-            extern uintptr_t __freertos_irq_stack_top;
+        return;
+    }
 
-            /* XXX change sp to irq stack base */
-            __asm__ volatile("add sp, x0, %0" ::"r"(&__freertos_irq_stack_top));
-            void coredump_run(void);
-            coredump_run();
+#ifdef CONFIG_COREDUMP
+    {
+        /* For stack check */
+        extern uintptr_t __freertos_irq_stack_top;
+
+        /* XXX change sp to irq stack base */
+        __asm__ volatile("add sp, x0, %0" ::"r"(&__freertos_irq_stack_top));
+        void coredump_run(void);
+        coredump_run(); /* never returns: waits on UART for '@' to redump */
+    }
+#else
+    {
+        printf("rebooting on exception...\r\n");
+        bl_sys_reset_system();
+    }
 #endif
-        }
+
+    while (1) {
     }
 }
 

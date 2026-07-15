@@ -59,6 +59,7 @@ void bflb_l1c_dcache_disable(void)
 #ifdef romapi_bflb_l1c_dcache_disable
     romapi_bflb_l1c_dcache_disable();
 #else
+    csi_dcache_clean_invalid();
     csi_dcache_disable();
 #endif
 }

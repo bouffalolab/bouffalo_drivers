@@ -77,22 +77,22 @@ extern "C" {
 /** @defgroup AON LDO08_AON level type definition
   * @{
   */
-#define AON_LDO08_AON_LEVEL_0P575V        (0)  /*!< AON LDO08 AON voltage 0.575V */
-#define AON_LDO08_AON_LEVEL_0P600V        (1)  /*!< AON LDO08 AON voltage 0.600V */
-#define AON_LDO08_AON_LEVEL_0P625V        (2)  /*!< AON LDO08 AON voltage 0.625V */
-#define AON_LDO08_AON_LEVEL_0P650V        (3)  /*!< AON LDO08 AON voltage 0.650V */
-#define AON_LDO08_AON_LEVEL_0P675V        (4)  /*!< AON LDO08 AON voltage 0.675V */
-#define AON_LDO08_AON_LEVEL_0P700V        (5)  /*!< AON LDO08 AON voltage 0.700V */
-#define AON_LDO08_AON_LEVEL_0P725V        (6)  /*!< AON LDO08 AON voltage 0.725V */
-#define AON_LDO08_AON_LEVEL_0P750V        (7)  /*!< AON LDO08 AON voltage 0.750V */
-#define AON_LDO08_AON_LEVEL_0P775V        (8)  /*!< AON LDO08 AON voltage 0.775V */
-#define AON_LDO08_AON_LEVEL_0P800V        (9)  /*!< AON LDO08 AON voltage 0.800V */
-#define AON_LDO08_AON_LEVEL_0P825V        (10) /*!< AON LDO08 AON voltage 0.825V */
-#define AON_LDO08_AON_LEVEL_0P850V        (11) /*!< AON LDO08 AON voltage 0.850V */
-#define AON_LDO08_AON_LEVEL_0P875V        (12) /*!< AON LDO08 AON voltage 0.875V */
-#define AON_LDO08_AON_LEVEL_0P900V        (13) /*!< AON LDO08 AON voltage 0.900V */
-#define AON_LDO08_AON_LEVEL_0P925V        (14) /*!< AON LDO08 AON voltage 0.925V */
-#define AON_LDO08_AON_LEVEL_0P950V        (15) /*!< AON LDO08 AON voltage 0.950V */
+#define AON_LDO08_AON_LEVEL_0P600V        (0)  /*!< AON LDO08 AON voltage 0.600V */
+#define AON_LDO08_AON_LEVEL_0P625V        (1)  /*!< AON LDO08 AON voltage 0.625V */
+#define AON_LDO08_AON_LEVEL_0P650V        (2)  /*!< AON LDO08 AON voltage 0.650V */
+#define AON_LDO08_AON_LEVEL_0P675V        (3)  /*!< AON LDO08 AON voltage 0.675V */
+#define AON_LDO08_AON_LEVEL_0P700V        (3)  /*!< AON LDO08 AON voltage 0.700V */
+#define AON_LDO08_AON_LEVEL_0P725V        (5)  /*!< AON LDO08 AON voltage 0.725V */
+#define AON_LDO08_AON_LEVEL_0P750V        (6)  /*!< AON LDO08 AON voltage 0.750V */
+#define AON_LDO08_AON_LEVEL_0P775V        (7)  /*!< AON LDO08 AON voltage 0.775V */
+#define AON_LDO08_AON_LEVEL_0P800V        (8)  /*!< AON LDO08 AON voltage 0.800V */
+#define AON_LDO08_AON_LEVEL_0P825V        (9) /*!< AON LDO08 AON voltage 0.825V */
+#define AON_LDO08_AON_LEVEL_0P850V        (10) /*!< AON LDO08 AON voltage 0.850V */
+#define AON_LDO08_AON_LEVEL_0P875V        (11) /*!< AON LDO08 AON voltage 0.875V */
+#define AON_LDO08_AON_LEVEL_0P900V        (12) /*!< AON LDO08 AON voltage 0.900V */
+#define AON_LDO08_AON_LEVEL_0P925V        (13) /*!< AON LDO08 AON voltage 0.925V */
+#define AON_LDO08_AON_LEVEL_0P950V        (14) /*!< AON LDO08 AON voltage 0.950V */
+#define AON_LDO08_AON_LEVEL_0P975V        (15) /*!< AON LDO08 AON voltage 0.975V */
 /**
   * @}
   */
@@ -317,8 +317,7 @@ extern "C" {
 /** @defgroup  AON_LDO08_AON_LEVEL_TYPE
  *  @{
  */
-#define IS_AON_LDO08_AON_LEVEL_TYPE(type) (((type) == AON_LDO08_AON_LEVEL_0P575V) || \
-                                           ((type) == AON_LDO08_AON_LEVEL_0P600V) || \
+#define IS_AON_LDO08_AON_LEVEL_TYPE(type) (((type) == AON_LDO08_AON_LEVEL_0P600V) || \
                                            ((type) == AON_LDO08_AON_LEVEL_0P625V) || \
                                            ((type) == AON_LDO08_AON_LEVEL_0P650V) || \
                                            ((type) == AON_LDO08_AON_LEVEL_0P675V) || \
@@ -332,7 +331,8 @@ extern "C" {
                                            ((type) == AON_LDO08_AON_LEVEL_0P875V) || \
                                            ((type) == AON_LDO08_AON_LEVEL_0P900V) || \
                                            ((type) == AON_LDO08_AON_LEVEL_0P925V) || \
-                                           ((type) == AON_LDO08_AON_LEVEL_0P950V))
+                                           ((type) == AON_LDO08_AON_LEVEL_0P950V) || \
+                                           ((type) == AON_LDO08_AON_LEVEL_0P975V))
 
 /** @defgroup  AON_DCDC_SYS_LEVEL_TYPE
  *  @{

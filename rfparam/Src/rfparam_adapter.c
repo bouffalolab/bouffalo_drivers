@@ -849,6 +849,38 @@ int32_t rfparam_init(uint32_t base_addr, void *rf_para, uint32_t apply_flag)
             g_rfparam_cfg->param.ef.iptat_code = 0x80;
         }
     }
+    #elif defined(BL618DG)
+    bflb_ef_ctrl_read_common_trim(NULL, "rcal_icx", &trim, 1);
+    if (trim.empty) {
+        rfparam_printf("rcal_icx empty\r\n");
+        rfparam_printf("icx use default value 0x80\r\n");
+        g_rfparam_cfg->param.ef.icx_code = 0x80;
+    } else {
+        if (trim.en == 1 && trim.parity == bflb_ef_ctrl_get_trim_parity(trim.value, trim.len)) {
+            g_rfparam_cfg->param.ef.icx_code = trim.value;
+            rfparam_printf("icx value %d\r\n", (int)trim.value);
+        } else {
+            rfparam_printf("rcal_icx param error\r\n");
+            rfparam_printf("icx use default value 0x80\r\n");
+            g_rfparam_cfg->param.ef.icx_code = 0x80;
+        }
+    }
+
+    bflb_ef_ctrl_read_common_trim(NULL, "rcal_iptat", &trim, 1);
+    if (trim.empty) {
+        rfparam_printf("rcal_iptat empty\r\n");
+        rfparam_printf("iptat use default value 0x80\r\n");
+        g_rfparam_cfg->param.ef.iptat_code = 0x80;
+    } else {
+        if (trim.en == 1 && trim.parity == bflb_ef_ctrl_get_trim_parity(trim.value, trim.len)) {
+            g_rfparam_cfg->param.ef.iptat_code = trim.value;
+            rfparam_printf("iptat value %d\r\n", (int)trim.value);
+        } else {
+            rfparam_printf("rcal_iptat param error\r\n");
+            rfparam_printf("iptat use default value 0x80\r\n");
+            g_rfparam_cfg->param.ef.iptat_code = 0x80;
+        }
+    }
     #else
     bflb_ef_ctrl_read_common_trim(NULL, "icx", &trim, 1);
     if (trim.empty) {
@@ -904,6 +936,10 @@ int32_t rfparam_init(uint32_t base_addr, void *rf_para, uint32_t apply_flag)
             rfparam_printf("temp_mp use default value 35\r\n");
         }
     }
+
+    #elif defined(BL618DG)
+    g_rfparam_cfg->param.ef.Temperature_MP = 35;
+    printf("temp_mp use default value 35\r\n");
 
     #else
     bflb_ef_ctrl_read_common_trim(NULL, "tmp_mp2", &trim, 1);

@@ -51,6 +51,10 @@
 #define PM_HBN_LDO_LEVEL_DEFAULT HBN_LDO_LEVEL_1P10V
 #endif
 
+#ifndef PM_HBN_LDO08_AON_LEVEL_DEFAULT
+#define PM_HBN_LDO08_AON_LEVEL_DEFAULT AON_LDO08_AON_LEVEL_0P800V
+#endif
+
 #ifndef PM_PDS_LDO18IO_POWER_DOWN
 #define PM_PDS_LDO18IO_POWER_DOWN 0
 #endif
@@ -884,7 +888,7 @@ void ATTR_TCM_SECTION pm_pds_enable(uint32_t *cfg)
 #endif
 
     if (ENABLE == p->ldo_soc_cfg.lp_mode_en) {
-        AON_Set_Ldo_Soc_Mode(AON_LDO_SOC_LOWPOWER_MODE);
+        AON_Ctrl_Ldo_Soc_Mode_by_HW(ENABLE);
         AON_Set_Ldo_Soc_Vout_in_Lowpower(p->ldo_soc_cfg.voltage_level);
     } else {
         AON_Set_Ldo_Soc_Mode(AON_LDO_SOC_NORMAL_MODE);
@@ -892,7 +896,7 @@ void ATTR_TCM_SECTION pm_pds_enable(uint32_t *cfg)
     }
 
     if (ENABLE == p->dcdc_sys_cfg.lp_mode_en) {
-        AON_Set_Dcdc_Sys_Mode(AON_DCDC_SYS_LOWPOWER_MODE);
+        AON_Ctrl_Dcdc_Sys_Mode_by_HW(ENABLE);
         AON_Set_Dcdc_Sys_Vout_in_Lowpower(p->dcdc_sys_cfg.voltage_level);
     } else {
         AON_Set_Dcdc_Sys_Mode(AON_DCDC_SYS_NORMAL_MODE);
@@ -900,12 +904,13 @@ void ATTR_TCM_SECTION pm_pds_enable(uint32_t *cfg)
     }
 
     if (ENABLE == p->ldo18_aon_cfg.lp_mode_en) {
-        AON_Set_Ldo18_Aon_Mode(AON_LDO18_AON_LOWPOWER_MODE);
+        AON_Ctrl_Ldo18_Aon_Mode_by_HW(ENABLE);
         AON_Set_Ldo18_Aon_Vout_in_Lowpower(p->ldo18_aon_cfg.voltage_level);
     } else {
         AON_Set_Ldo18_Aon_Mode(AON_LDO18_AON_NORMAL_MODE);
         AON_Set_Ldo18_Aon_Vout(p->ldo18_aon_cfg.voltage_level);
     }
+
     if (p->sleepTime) {
         PDS_Set_Wakeup_Src_IntMask(PDS_WAKEUP_BY_PDS_TIMER, UNMASK); // unmask pds sleep time wakeup
     } else {
@@ -1124,7 +1129,8 @@ void ATTR_TCM_SECTION pm_hbn_mode_enter(enum pm_hbn_sleep_level hbn_level,
     irq_flag = irq_flag;
 
     AON_Ctrl_Ldo18_Aon_Mode_by_HW(1);
-    AON_Set_Ldo08_Aon_Vout(AON_LDO08_AON_LEVEL_0P800V);
+    AON_Ctrl_Dcdc_Sys_Mode_by_HW(1);
+    AON_Set_Ldo08_Aon_Vout(PM_HBN_LDO08_AON_LEVEL_DEFAULT);
 
     bflb_irq_clear_pending(HBN_OUT0_IRQn);
     bflb_irq_clear_pending(HBN_OUT1_IRQn);

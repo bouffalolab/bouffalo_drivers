@@ -677,6 +677,15 @@ int ATTR_TCM_SECTION bflb_ef_ctrl_set_para(bflb_ef_ctrl_para_t *para)
 *******************************************************************************/
 void ATTR_TCM_SECTION bflb_ef_ctrl_write_direct(struct bflb_device_s *dev, uint32_t offset, uint32_t *pword, uint32_t count, uint8_t program)
 {
+#if defined(BL616CL)
+    uint32_t ldoLevel = 0;
+    uint32_t reg_val = getreg32(0x2000F81C);
+    ldoLevel = (reg_val >> 12) & 0xf;
+    /* more than 1.9V */
+    if(ldoLevel > 5){
+        return;
+    }
+#endif
 #ifdef romapi_bflb_ef_ctrl_write_direct
     romapi_bflb_ef_ctrl_write_direct(dev, offset, pword, count, program);
 #else

@@ -16,6 +16,7 @@ if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/instance AND IS_DIRECTORY ${CMAK
     sdk_library_add_sources(src/instance/bflb_pec_i2c.c)
     sdk_library_add_sources(src/instance/bflb_pec_dpi.c)
     sdk_library_add_sources(src/instance/bflb_pec_srgb.c)
+    sdk_library_add_sources(src/instance/bflb_pec_dvp_cam.c)
     sdk_library_add_sources(src/instance/bflb_pec_qspi_cam.c)
 else ()
     if((EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/lib/libpec_v2_${CHIP}_b0.a) AND ("${CPU_MODEL}" STREQUAL "b0"))

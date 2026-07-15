@@ -1080,7 +1080,9 @@ BL_Err_Type ATTR_TCM_SECTION AON_Ctrl_Ldo18_Aon_Mode_by_HW(uint8_t enable)
     uint32_t tmpVal;
 
     tmpVal = BL_RD_REG(AON_BASE, AON_LP_EN_HW);
+#if defined(CPU_MODEL_A0)
     tmpVal ^= (0x7 << 4);
+#endif
     if (enable == ENABLE) {
         tmpVal = BL_SET_REG_BIT(tmpVal, AON_LDO18AON_LP_EN_AON_CTRL_HW);
     } else {
@@ -1097,7 +1099,9 @@ BL_Err_Type ATTR_TCM_SECTION AON_Ctrl_Dcdc_Sys_Mode_by_HW(uint8_t enable)
     uint32_t tmpVal;
 
     tmpVal = BL_RD_REG(AON_BASE, AON_LP_EN_HW);
+#if defined(CPU_MODEL_A0)
     tmpVal ^= (0x7 << 4);
+#endif
     if (enable == ENABLE) {
         tmpVal = BL_SET_REG_BIT(tmpVal, AON_DCDC12_LP_EN_AON_CTRL_HW);
     } else {
@@ -1114,7 +1118,9 @@ BL_Err_Type ATTR_TCM_SECTION AON_Ctrl_Ldo_Soc_Mode_by_HW(uint8_t enable)
     uint32_t tmpVal;
 
     tmpVal = BL_RD_REG(AON_BASE, AON_LP_EN_HW);
+#if defined(CPU_MODEL_A0)
     tmpVal ^= (0x7 << 4);
+#endif
     if (enable == ENABLE) {
         tmpVal = BL_SET_REG_BIT(tmpVal, AON_LDO09SOC_LP_EN_AON_CTRL_HW);
     } else {
@@ -1133,7 +1139,9 @@ BL_Err_Type ATTR_TCM_SECTION AON_Set_Ldo18_Aon_Mode(uint8_t mode)
     CHECK_PARAM(IS_AON_LDO18_AON_MODE_TYPE(mode));
 
     tmpVal = BL_RD_REG(AON_BASE, AON_LP_EN_HW);
+#if defined(CPU_MODEL_A0)
     tmpVal ^= (0x7 << 4);
+#endif
 
     tmpVal = BL_CLR_REG_BIT(tmpVal, AON_LDO18AON_LP_EN_AON_CTRL_HW);
     tmpVal = BL_SET_REG_BITS_VAL(tmpVal, AON_LDO18AON_LP_EN_AON, mode);
@@ -1150,7 +1158,9 @@ BL_Err_Type ATTR_TCM_SECTION AON_Set_Dcdc_Sys_Mode(uint8_t mode)
     CHECK_PARAM(IS_AON_DCDC_SYS_MODE_TYPE(mode));
 
     tmpVal = BL_RD_REG(AON_BASE, AON_LP_EN_HW);
+#if defined(CPU_MODEL_A0)
     tmpVal ^= (0x7 << 4);
+#endif
 
     tmpVal = BL_CLR_REG_BIT(tmpVal, AON_DCDC12_LP_EN_AON_CTRL_HW);
     tmpVal = BL_SET_REG_BITS_VAL(tmpVal, AON_DCDC12_LP_EN_AON, mode);
@@ -1167,7 +1177,9 @@ BL_Err_Type ATTR_TCM_SECTION AON_Set_Ldo_Soc_Mode(uint8_t mode)
     CHECK_PARAM(IS_AON_LDO_SOC_MODE_TYPE(mode));
 
     tmpVal = BL_RD_REG(AON_BASE, AON_LP_EN_HW);
+#if defined(CPU_MODEL_A0)
     tmpVal ^= (0x7 << 4);
+#endif
 
     tmpVal = BL_CLR_REG_BIT(tmpVal, AON_LDO09SOC_LP_EN_AON_CTRL_HW);
     tmpVal = BL_SET_REG_BITS_VAL(tmpVal, AON_LDO09SOC_LP_EN_AON, mode);

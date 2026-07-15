@@ -35,8 +35,6 @@
   */
 #include "bl618dg_common.h"
 #include "bflb_efuse.h"
-#define  WHO_AM_I    (0x60f82800)
-#define  I_AM_A0     (0x0616d001)
 
 #if defined(CPU_MODEL_A0)
 #define EFUSE_TRIM_PSRAM_OFFSET      0xB4
@@ -370,32 +368,16 @@ uint8_t bflb_efuse_is_mac_address_slot_empty(uint8_t slot, uint8_t reload)
 {
     uint32_t tmp1 = 0xffffffff, tmp2 = 0xffffffff;
     uint32_t part1Empty = 0, part2Empty = 0;
-    uint32_t regval;
 
-    regval = getreg32(WHO_AM_I);
     if (slot == 0) {
         bflb_ef_ctrl_read_direct(NULL, 0x14, &tmp1, 1, reload);
         bflb_ef_ctrl_read_direct(NULL, 0x18, &tmp2, 1, reload);
     } else if (slot == 1) {
-        if(regval == I_AM_A0)
-        {
-            bflb_ef_ctrl_read_direct(NULL, 0xC0, &tmp1, 1, reload);
-            bflb_ef_ctrl_read_direct(NULL, 0xC4, &tmp2, 1, reload);
-        }else
-        {
-            bflb_ef_ctrl_read_direct(NULL, 0x110, &tmp1, 1, reload);
-            bflb_ef_ctrl_read_direct(NULL, 0x114, &tmp2, 1, reload);
-        }
+        bflb_ef_ctrl_read_direct(NULL, 0x110, &tmp1, 1, reload);
+        bflb_ef_ctrl_read_direct(NULL, 0x114, &tmp2, 1, reload);
     } else if (slot == 2) {
-        if(regval == I_AM_A0)
-        {
-            bflb_ef_ctrl_read_direct(NULL, 0xC8, &tmp1, 1, reload);
-            bflb_ef_ctrl_read_direct(NULL, 0xCC, &tmp2, 1, reload);
-        }else
-        {
-            bflb_ef_ctrl_read_direct(NULL, 0x118, &tmp1, 1, reload);
-            bflb_ef_ctrl_read_direct(NULL, 0x11C, &tmp2, 1, reload);
-        }
+        bflb_ef_ctrl_read_direct(NULL, 0x118, &tmp1, 1, reload);
+        bflb_ef_ctrl_read_direct(NULL, 0x11C, &tmp2, 1, reload);
     }
 
     part1Empty = (bflb_ef_ctrl_is_all_bits_zero(tmp1, 0, 32));
@@ -420,9 +402,7 @@ int bflb_efuse_write_mac_address_opt(uint8_t slot, uint8_t mac[6], uint8_t progr
     uint8_t *machigh = (uint8_t *)(mac + 4);
     uint32_t tmpval;
     uint32_t i = 0, cnt;
-    uint32_t regval;
 
-    regval = getreg32(WHO_AM_I);
     if (slot >= 3) {
         return -1;
     }
@@ -440,21 +420,9 @@ int bflb_efuse_write_mac_address_opt(uint8_t slot, uint8_t mac[6], uint8_t progr
     if (slot == 0) {
         bflb_ef_ctrl_write_direct(NULL, 0x14, &tmpval, 1, program);
     } else if (slot == 1) {
-        if(regval == I_AM_A0)
-        {
-            bflb_ef_ctrl_write_direct(NULL, 0xC0, &tmpval, 1, program);
-        }else
-        {
-            bflb_ef_ctrl_write_direct(NULL, 0x110, &tmpval, 1, program);
-        }
+        bflb_ef_ctrl_write_direct(NULL, 0x110, &tmpval, 1, program);
     } else if (slot == 2) {
-        if(regval == I_AM_A0)
-        {
-            bflb_ef_ctrl_write_direct(NULL, 0xC8, &tmpval, 1, program);
-        }else
-        {
-            bflb_ef_ctrl_write_direct(NULL, 0x118, &tmpval, 1, program);
-        }
+        bflb_ef_ctrl_write_direct(NULL, 0x118, &tmpval, 1, program);
     }
 
     /* The high 16 bits */
@@ -470,21 +438,9 @@ int bflb_efuse_write_mac_address_opt(uint8_t slot, uint8_t mac[6], uint8_t progr
     if (slot == 0) {
         bflb_ef_ctrl_write_direct(NULL, 0x18, &tmpval, 1, program);
     } else if (slot == 1) {
-        if(regval == I_AM_A0)
-        {
-            bflb_ef_ctrl_write_direct(NULL, 0xC4, &tmpval, 1, program);
-        }else
-        {
-            bflb_ef_ctrl_write_direct(NULL, 0x114, &tmpval, 1, program);
-        }
+        bflb_ef_ctrl_write_direct(NULL, 0x114, &tmpval, 1, program);
     } else if (slot == 2) {
-        if(regval == I_AM_A0)
-        {
-            bflb_ef_ctrl_write_direct(NULL, 0xCC, &tmpval, 1, program);
-        }else
-        {
-            bflb_ef_ctrl_write_direct(NULL, 0x11C, &tmpval, 1, program);
-        }
+        bflb_ef_ctrl_write_direct(NULL, 0x11C, &tmpval, 1, program);
     }
 
     return 0;
@@ -507,9 +463,7 @@ int bflb_efuse_read_mac_address_opt(uint8_t slot, uint8_t mac[6], uint8_t reload
     uint32_t tmpval = 0;
     uint32_t i = 0;
     uint32_t cnt = 0;
-    uint32_t regval;
 
-    regval = getreg32(WHO_AM_I);
     if (slot >= 3) {
         return -1;
     }
@@ -517,43 +471,18 @@ int bflb_efuse_read_mac_address_opt(uint8_t slot, uint8_t mac[6], uint8_t reload
     if (slot == 0) {
         bflb_ef_ctrl_read_direct(NULL, 0x14, &tmpval, 1, reload);
     }else if (slot == 1) {
-
-        if(regval == I_AM_A0)
-        {
-            bflb_ef_ctrl_read_direct(NULL, 0xC0, &tmpval, 1, reload);
-        }else
-        {
-            bflb_ef_ctrl_read_direct(NULL, 0x110, &tmpval, 1, reload);
-        }
+        bflb_ef_ctrl_read_direct(NULL, 0x110, &tmpval, 1, reload);
     }else if (slot == 2) {
-        if(regval == I_AM_A0)
-        {
-            bflb_ef_ctrl_read_direct(NULL, 0xC8, &tmpval, 1, reload);
-        }else
-        {
-            bflb_ef_ctrl_read_direct(NULL, 0x118, &tmpval, 1, reload);
-        }
+        bflb_ef_ctrl_read_direct(NULL, 0x118, &tmpval, 1, reload);
     }
     BL_WRWD_TO_BYTEP(maclow, tmpval);
 
     if (slot == 0) {
         bflb_ef_ctrl_read_direct(NULL, 0x18, &tmpval, 1, reload);
     }else if (slot == 1) {
-        if(regval == I_AM_A0)
-        {
-            bflb_ef_ctrl_read_direct(NULL, 0xC4, &tmpval, 1, reload);
-        }else
-        {
-            bflb_ef_ctrl_read_direct(NULL, 0x114, &tmpval, 1, reload);
-        }
+        bflb_ef_ctrl_read_direct(NULL, 0x114, &tmpval, 1, reload);
     }else if (slot == 2) {
-        if(regval == I_AM_A0)
-        {
-            bflb_ef_ctrl_read_direct(NULL, 0xCC, &tmpval, 1, reload);
-        }else
-        {
-            bflb_ef_ctrl_read_direct(NULL, 0x11C, &tmpval, 1, reload);
-        }
+        bflb_ef_ctrl_read_direct(NULL, 0x11C, &tmpval, 1, reload);
     }
 
     machigh[0] = tmpval & 0xff;

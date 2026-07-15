@@ -148,6 +148,7 @@ void bflb_rv_dcache_enable(void)
 void bflb_rv_dcache_disable(void)
 {
 #if !defined(CONFIG_RV_PRIVILEGE_MODE_S)
+    MFlushInvalDCache();
     DisableDCache();
 #endif
 }

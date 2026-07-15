@@ -21,6 +21,7 @@
  *
  */
 #include "bflb_core.h"
+#include "bl702l_sys.h"
 
 typedef void (*pFunc)(void);
 
@@ -154,8 +155,8 @@ void exception_entry(void)
         epc += 4;
         WRITE_CSR(CSR_MEPC, epc);
     } else {
-        while (1) {
 #ifdef CONFIG_COREDUMP
+        {
           /* For stack check */
             extern uintptr_t __freertos_irq_stack_top;
 
@@ -163,7 +164,14 @@ void exception_entry(void)
             __asm__ volatile("add sp, x0, %0" ::"r"(&__freertos_irq_stack_top));
             void coredump_run(void);
             coredump_run();
+        }
+#else
+        {
+            printf("rebooting on exception...\r\n");
+            bl_sys_reset_system();
+        }
 #endif
+        while (1) {
         }
     }
 }

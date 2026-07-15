@@ -41,8 +41,6 @@
 #include "bl618dg_pds.h"
 #include "bflb_ef_ctrl.h"
 
-#define  WHO_AM_I    (0x60f82800)
-#define  I_AM_A0     (0x0616d001)
 #define  PSRAM_X8_CTRL_WAIT_TIMEOUT 1000
 
 #if defined(CPU_MODEL_A0)
@@ -310,6 +308,120 @@ BL_Err_Type ATTR_TCM_SECTION AON_Set_Ldo09_Soc_Slow_Pulldown(uint8_t enable)
     return SUCCESS;
 }
 
+BL_Err_Type ATTR_TCM_SECTION AON_Ctrl_Ldo18_Aon_Mode_by_HW(uint8_t enable)
+{
+    uint32_t tmpVal;
+
+    tmpVal = BL_RD_REG(AON_BASE, AON_LP_EN_HW);
+#if defined(CPU_MODEL_A0)
+    tmpVal ^= (0x7 << 4);
+#endif
+    if (enable == ENABLE) {
+        tmpVal = BL_SET_REG_BIT(tmpVal, AON_LDO18AON_LP_EN_AON_CTRL_HW);
+    } else {
+        tmpVal = BL_CLR_REG_BIT(tmpVal, AON_LDO18AON_LP_EN_AON_CTRL_HW);
+    }
+
+    BL_WR_REG(AON_BASE, AON_LP_EN_HW, tmpVal);
+
+    return SUCCESS;
+}
+
+BL_Err_Type ATTR_TCM_SECTION AON_Ctrl_Dcdc_Sys_Mode_by_HW(uint8_t enable)
+{
+    uint32_t tmpVal;
+
+    tmpVal = BL_RD_REG(AON_BASE, AON_LP_EN_HW);
+#if defined(CPU_MODEL_A0)
+    tmpVal ^= (0x7 << 4);
+#endif
+    if (enable == ENABLE) {
+        tmpVal = BL_SET_REG_BIT(tmpVal, AON_DCDC12_LP_EN_AON_CTRL_HW);
+    } else {
+        tmpVal = BL_CLR_REG_BIT(tmpVal, AON_DCDC12_LP_EN_AON_CTRL_HW);
+    }
+
+    BL_WR_REG(AON_BASE, AON_LP_EN_HW, tmpVal);
+
+    return SUCCESS;
+}
+
+BL_Err_Type ATTR_TCM_SECTION AON_Ctrl_Ldo_Soc_Mode_by_HW(uint8_t enable)
+{
+    uint32_t tmpVal;
+
+    tmpVal = BL_RD_REG(AON_BASE, AON_LP_EN_HW);
+#if defined(CPU_MODEL_A0)
+    tmpVal ^= (0x7 << 4);
+#endif
+    if (enable == ENABLE) {
+        tmpVal = BL_SET_REG_BIT(tmpVal, AON_LDO09SOC_LP_EN_AON_CTRL_HW);
+    } else {
+        tmpVal = BL_CLR_REG_BIT(tmpVal, AON_LDO09SOC_LP_EN_AON_CTRL_HW);
+    }
+
+    BL_WR_REG(AON_BASE, AON_LP_EN_HW, tmpVal);
+
+    return SUCCESS;
+}
+
+BL_Err_Type ATTR_TCM_SECTION AON_Set_Ldo18_Aon_Mode(uint8_t mode)
+{
+    uint32_t tmpVal;
+
+    CHECK_PARAM(IS_AON_LDO18_AON_MODE_TYPE(mode));
+
+    tmpVal = BL_RD_REG(AON_BASE, AON_LP_EN_HW);
+#if defined(CPU_MODEL_A0)
+    tmpVal ^= (0x7 << 4);
+#endif
+
+    tmpVal = BL_CLR_REG_BIT(tmpVal, AON_LDO18AON_LP_EN_AON_CTRL_HW);
+    tmpVal = BL_SET_REG_BITS_VAL(tmpVal, AON_LDO18AON_LP_EN_AON, mode);
+
+    BL_WR_REG(AON_BASE, AON_LP_EN_HW, tmpVal);
+
+    return SUCCESS;
+}
+
+BL_Err_Type ATTR_TCM_SECTION AON_Set_Dcdc_Sys_Mode(uint8_t mode)
+{
+    uint32_t tmpVal;
+
+    CHECK_PARAM(IS_AON_DCDC_SYS_MODE_TYPE(mode));
+
+    tmpVal = BL_RD_REG(AON_BASE, AON_LP_EN_HW);
+#if defined(CPU_MODEL_A0)
+    tmpVal ^= (0x7 << 4);
+#endif
+
+    tmpVal = BL_CLR_REG_BIT(tmpVal, AON_DCDC12_LP_EN_AON_CTRL_HW);
+    tmpVal = BL_SET_REG_BITS_VAL(tmpVal, AON_DCDC12_LP_EN_AON, mode);
+
+    BL_WR_REG(AON_BASE, AON_LP_EN_HW, tmpVal);
+
+    return SUCCESS;
+}
+
+BL_Err_Type ATTR_TCM_SECTION AON_Set_Ldo_Soc_Mode(uint8_t mode)
+{
+    uint32_t tmpVal;
+
+    CHECK_PARAM(IS_AON_LDO_SOC_MODE_TYPE(mode));
+
+    tmpVal = BL_RD_REG(AON_BASE, AON_LP_EN_HW);
+#if defined(CPU_MODEL_A0)
+    tmpVal ^= (0x7 << 4);
+#endif
+
+    tmpVal = BL_CLR_REG_BIT(tmpVal, AON_LDO09SOC_LP_EN_AON_CTRL_HW);
+    tmpVal = BL_SET_REG_BITS_VAL(tmpVal, AON_LDO09SOC_LP_EN_AON, mode);
+
+    BL_WR_REG(AON_BASE, AON_LP_EN_HW, tmpVal);
+
+    return SUCCESS;
+}
+
 BL_Err_Type ATTR_TCM_SECTION HBN_Enable_Dcdc09(uint8_t gpio)
 {
     uint32_t tmpVal;
@@ -373,9 +485,7 @@ int bflb_efuse_write_mac_address_opt(uint8_t slot, uint8_t mac[6], uint8_t progr
     uint8_t *machigh = (uint8_t *)(mac + 4);
     uint32_t tmpval;
     uint32_t i = 0, cnt;
-    uint32_t regval;
 
-    regval = getreg32(WHO_AM_I);
     if (slot >= 3) {
         return -1;
     }
@@ -393,21 +503,9 @@ int bflb_efuse_write_mac_address_opt(uint8_t slot, uint8_t mac[6], uint8_t progr
     if (slot == 0) {
         bflb_ef_ctrl_write_direct(NULL, 0x14, &tmpval, 1, program);
     } else if (slot == 1) {
-        if(regval == I_AM_A0)
-        {
-            bflb_ef_ctrl_write_direct(NULL, 0xC0, &tmpval, 1, program);
-        }else
-        {
-            bflb_ef_ctrl_write_direct(NULL, 0x110, &tmpval, 1, program);
-        }
+        bflb_ef_ctrl_write_direct(NULL, 0x110, &tmpval, 1, program);
     } else if (slot == 2) {
-        if(regval == I_AM_A0)
-        {
-            bflb_ef_ctrl_write_direct(NULL, 0xC8, &tmpval, 1, program);
-        }else
-        {
-            bflb_ef_ctrl_write_direct(NULL, 0x118, &tmpval, 1, program);
-        }
+        bflb_ef_ctrl_write_direct(NULL, 0x118, &tmpval, 1, program);
     }
 
     /* The high 16 bits */
@@ -423,21 +521,9 @@ int bflb_efuse_write_mac_address_opt(uint8_t slot, uint8_t mac[6], uint8_t progr
     if (slot == 0) {
         bflb_ef_ctrl_write_direct(NULL, 0x18, &tmpval, 1, program);
     } else if (slot == 1) {
-        if(regval == I_AM_A0)
-        {
-            bflb_ef_ctrl_write_direct(NULL, 0xC4, &tmpval, 1, program);
-        }else
-        {
-            bflb_ef_ctrl_write_direct(NULL, 0x114, &tmpval, 1, program);
-        }
+        bflb_ef_ctrl_write_direct(NULL, 0x114, &tmpval, 1, program);
     } else if (slot == 2) {
-        if(regval == I_AM_A0)
-        {
-            bflb_ef_ctrl_write_direct(NULL, 0xCC, &tmpval, 1, program);
-        }else
-        {
-            bflb_ef_ctrl_write_direct(NULL, 0x11C, &tmpval, 1, program);
-        }
+        bflb_ef_ctrl_write_direct(NULL, 0x11C, &tmpval, 1, program);
     }
 
     return 0;
@@ -1129,4 +1215,95 @@ BL_Err_Type ATTR_TCM_SECTION PDS_Set_All_WRAM_Retention(void)
     BL_WR_REG(PDS_BASE, PDS_RAM2, tmpVal);
 
     return SUCCESS;
+}
+
+/****************************************************************************/ /**
+ * @brief  Whether MAC address slot is empty
+ *
+ * @param  slot: MAC address slot
+ * @param  reload: whether  reload to check
+ *
+ * @return 0 for all slots full,1 for others
+ *
+*******************************************************************************/
+uint8_t bflb_efuse_is_mac_address_slot_empty(uint8_t slot, uint8_t reload)
+{
+    uint32_t tmp1 = 0xffffffff, tmp2 = 0xffffffff;
+    uint32_t part1Empty = 0, part2Empty = 0;
+
+    if (slot == 0) {
+        bflb_ef_ctrl_read_direct(NULL, 0x14, &tmp1, 1, reload);
+        bflb_ef_ctrl_read_direct(NULL, 0x18, &tmp2, 1, reload);
+    } else if (slot == 1) {
+        bflb_ef_ctrl_read_direct(NULL, 0x110, &tmp1, 1, reload);
+        bflb_ef_ctrl_read_direct(NULL, 0x114, &tmp2, 1, reload);
+    } else if (slot == 2) {
+        bflb_ef_ctrl_read_direct(NULL, 0x118, &tmp1, 1, reload);
+        bflb_ef_ctrl_read_direct(NULL, 0x11C, &tmp2, 1, reload);
+    }
+
+    part1Empty = (bflb_ef_ctrl_is_all_bits_zero(tmp1, 0, 32));
+    part2Empty = (bflb_ef_ctrl_is_all_bits_zero(tmp2, 0, 22));
+
+    return (part1Empty && part2Empty);
+}
+
+/****************************************************************************/ /**
+ * @brief  Efuse read optional MAC address
+ *
+ * @param  slot: MAC address slot
+ * @param  mac[6]: MAC address buffer
+ * @param  reload: Whether reload
+ *
+ * @return 0 or -1
+ *
+*******************************************************************************/
+int bflb_efuse_read_mac_address_opt(uint8_t slot, uint8_t mac[6], uint8_t reload)
+{
+    uint8_t *maclow = (uint8_t *)mac;
+    uint8_t *machigh = (uint8_t *)(mac + 4);
+    uint32_t tmpval = 0;
+    uint32_t i = 0;
+    uint32_t cnt = 0;
+
+    if (slot >= 3) {
+        return -1;
+    }
+
+    if (slot == 0) {
+        bflb_ef_ctrl_read_direct(NULL, 0x14, &tmpval, 1, reload);
+    }else if (slot == 1) {
+        bflb_ef_ctrl_read_direct(NULL, 0x110, &tmpval, 1, reload);
+    }else if (slot == 2) {
+        bflb_ef_ctrl_read_direct(NULL, 0x118, &tmpval, 1, reload);
+    }
+    BL_WRWD_TO_BYTEP(maclow, tmpval);
+
+    if (slot == 0) {
+        bflb_ef_ctrl_read_direct(NULL, 0x18, &tmpval, 1, reload);
+    }else if (slot == 1) {
+        bflb_ef_ctrl_read_direct(NULL, 0x114, &tmpval, 1, reload);
+    }else if (slot == 2) {
+        bflb_ef_ctrl_read_direct(NULL, 0x11C, &tmpval, 1, reload);
+    }
+
+    machigh[0] = tmpval & 0xff;
+    machigh[1] = (tmpval >> 8) & 0xff;
+
+    /* Check parity */
+    for (i = 0; i < 6; i++) {
+        cnt += bflb_ef_ctrl_get_byte_zero_cnt(mac[i]);
+    }
+
+    if ((cnt & 0x3f) == ((tmpval >> 16) & 0x3f)) {
+        /* Change to network order */
+        for (i = 0; i < 3; i++) {
+            tmpval = mac[i];
+            mac[i] = mac[5 - i];
+            mac[5 - i] = tmpval;
+        }
+        return 0;
+    } else {
+        return -1;
+    }
 }

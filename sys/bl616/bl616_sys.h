@@ -21,6 +21,7 @@ char *bl_sys_rstinfo_getstring(void);
 void bl_sys_rstinfo_init(void);
 int bl_sys_reset_por(void);
 void bl_sys_reset_system(void);
+void bl_sys_reset_system_from_interface(void);
 int bl_sys_init(void);
 
 void bl_cpu_sysmap_init(bool dcache_preload_en, bool dcache_amr_en);

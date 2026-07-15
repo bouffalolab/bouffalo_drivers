@@ -306,6 +306,40 @@ int bflb_pec_srgb_init(struct bflb_device_s *dev, struct bflb_pec_srgb_s *srgb);
 void bflb_pec_srgb_deinit(struct bflb_device_s *dev);
 
 /******************************************************************
+DVP_CAM
+******************************************************************/
+#define PEC_DVP_HSYNC_SAMPLE_NONE      (0)
+#define PEC_DVP_HSYNC_SAMPLE_BEFORE    (1)
+
+struct bflb_pec_dvp_cam_s {
+    uint32_t mem;               /*!< memory address of first instruction */
+    uint16_t div;               /*!< divisor, N = div + 1 */
+    uint16_t resolution_x;      /*!< camera horizontal resolution */
+    uint16_t resolution_y;      /*!< camera vertical resolution */
+    uint8_t dma_enable;         /*!< enable or disable dma */
+    uint8_t fifo_threshold;     /*!< rx fifo threshold */
+    uint8_t pixel_bits;         /*!< serial clock count of every pixel */
+    uint8_t sample_dly;         /*!< delay count after sampling before checking PCLK again, in PEC clocks */
+    uint8_t hsync_dly;          /*!< delay count after HSYNC active before checking PCLK, in PEC clocks, only for PEC_DVP_HSYNC_SAMPLE_NONE */
+    uint8_t hsync_sample_mode;  /*!< PEC_DVP_HSYNC_SAMPLE_*, first bit sampling around HSYNC */
+    uint8_t pclk_sample_level;  /*!< physical PCLK sample level, 0: low, 1: high through input inversion */
+    uint8_t vsync_active_level; /*!< 0: VSYNC active low, 1: active high */
+    uint8_t hsync_active_level; /*!< 0: HSYNC active low, 1: active high */
+    uint8_t fifo_direction;     /*!< FIFO direction, PEC_SHIFT_DIR_TO_LEFT or PEC_SHIFT_DIR_TO_RIGHT */
+    uint8_t bits_every_push;    /*!< bits of every push when sample data into ISR, 1~32, must be multiple of pin_data_count */
+    uint32_t delay_first_us;    /*!< delay time in microsecond before start capature camera data */
+    uint8_t pin_vsync;          /*!< DVP CAM VSYNC pin index */
+    uint8_t pin_hsync;          /*!< DVP CAM HSYNC pin index */
+    uint8_t pin_pclk;           /*!< DVP CAM pixel clock pin index */
+    uint8_t pin_data;           /*!< DVP CAM data start pin index */
+    uint8_t pin_data_count;     /*!< DVP CAM data pin count, must be power of 2, such as 1, 2, 4, 8 */
+};  
+
+int bflb_pec_dvp_cam_init(struct bflb_device_s *dev, struct bflb_pec_dvp_cam_s *cam);
+void bflb_pec_dvp_cam_start(struct bflb_device_s *dev);
+void bflb_pec_dvp_cam_stop(struct bflb_device_s *dev);
+
+/******************************************************************
 QSPI_CAM
 ******************************************************************/
 struct bflb_pec_qspi_cam_s {

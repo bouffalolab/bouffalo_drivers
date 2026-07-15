@@ -327,6 +327,7 @@ ATTR_TCM_SECTION int bflb_spi_poll_exchange(struct bflb_device_s *dev, const voi
     uint32_t reg_base = dev->reg_base;
     uint32_t tx_cnt;
     uint8_t fifo_cnt, frame_size;
+    uint64_t start_time;
 
     /* get frame size */
     regval = getreg32(reg_base + SPI_CONFIG_OFFSET);
@@ -413,6 +414,7 @@ ATTR_TCM_SECTION int bflb_spi_poll_exchange(struct bflb_device_s *dev, const voi
     }
 
     /* read and write rest of the data */
+    start_time = bflb_mtimer_get_time_ms();
     for (; nbytes > 0;) {
         /* get rx fifo cnt */
         regval = getreg32(reg_base + SPI_FIFO_CONFIG_1_OFFSET);
@@ -425,7 +427,11 @@ ATTR_TCM_SECTION int bflb_spi_poll_exchange(struct bflb_device_s *dev, const voi
         if (fifo_cnt) {
             fifo_cnt = fifo_cnt > nbytes ? nbytes : fifo_cnt;
             nbytes -= fifo_cnt;
+            start_time = bflb_mtimer_get_time_ms();
         } else {
+            if ((bflb_mtimer_get_time_ms() - start_time) > 100) {
+                return -ETIMEDOUT;
+            }
         }
 
         /* read and write data */
