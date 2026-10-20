@@ -44,41 +44,6 @@ typedef struct
     const spi_flash_cfg_type *cfg;
 } Flash_Info_t;
 
-struct flash_params_s {
-    uint32_t jedec_id;
-    bflb_flash_secreg_param_t param;
-};
-
-static const ATTR_TCM_CONST_SECTION bflb_flash_secreg_param_t flash_secreg_param_gd_wq32e_q128e = {
-    .region_offset = 1,
-    .region_count = 3,
-    .region_size = 0x10,
-    .secreg_size = 0x4,
-    .api_type = BFLB_FLASH_SECREG_API_TYPE_GENERAL,
-    .lb_share = 0,
-    .lb_offset = 11,
-    .lb_write_cmd = 0x31,
-    .lb_write_len = 1,
-    .lb_read_cmd[0] = 0x35,
-    .lb_read_len = 1,
-    .lb_read_loop = 1,
-};
-
-static const ATTR_TCM_CONST_SECTION bflb_flash_secreg_param_t flash_secreg_param_gd_le80c = {
-    .region_offset = 1,
-    .region_count = 3,
-    .region_size = 0x10,
-    .secreg_size = 0x2,
-    .api_type = BFLB_FLASH_SECREG_API_TYPE_GENERAL,
-    .lb_share = 0,
-    .lb_offset = 11,
-    .lb_write_cmd = 0x01,
-    .lb_write_len = 2,
-    .lb_read_cmd = { 0x05, 0x35 },
-    .lb_read_len = 1,
-    .lb_read_loop = 2,
-};
-
 static const ATTR_TCM_CONST_SECTION spi_flash_cfg_type flash_cfg_winb_16jv = {
     .reset_c_read_cmd = 0xff,
     .reset_c_read_cmd_size = 3,
@@ -300,20 +265,6 @@ static const ATTR_TCM_CONST_SECTION Flash_Info_t flash_infos[] = {
     },
 };
 
-static const ATTR_TCM_CONST_SECTION struct flash_params_s flash_secreg_infos[] = {
-    {
-        .jedec_id = 0x155020,
-        .param = flash_secreg_param_gd_wq32e_q128e,
-    },
-    {
-        .jedec_id = 0x14345e,
-        .param = flash_secreg_param_gd_le80c,
-    },
-    {
-        .jedec_id = 0x164046,
-        .param = flash_secreg_param_gd_wq32e_q128e,
-    },
-};
 
 /****************************************************************************/ /**
  * @brief  Get flash config according to flash ID patch
@@ -359,28 +310,6 @@ int ATTR_TCM_SECTION bflb_sf_cfg_get_flash_cfg_need_lock_ext(uint32_t flash_id, 
                 arch_memcpy_fast(p_flash_cfg, flash_infos[i].cfg, sizeof(spi_flash_cfg_type));
                 return 0;
             }
-        }
-    }
-
-    return -1;
-}
-
-int ATTR_TCM_SECTION bflb_flash_secreg_get_param(uint32_t jid, const bflb_flash_secreg_param_t **param)
-{
-    uint32_t i;
-
-    if (param == NULL) {
-        return -1;
-    }
-
-    if (romapi_bflb_flash_secreg_get_param(jid, param) == 0) {
-        return 0;
-    }
-
-    for (i = 0; i < sizeof(flash_secreg_infos) / sizeof(flash_secreg_infos[0]); i++) {
-        if (flash_secreg_infos[i].jedec_id == jid) {
-            *param = &flash_secreg_infos[i].param;
-            return 0;
         }
     }
 

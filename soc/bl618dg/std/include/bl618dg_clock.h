@@ -134,7 +134,7 @@ typedef enum {
     BL_PERIPHERAL_CLOCK_SDH,      /*!< SDH clock */
     BL_PERIPHERAL_CLOCK_SEC_PKA,  /*!< PKA clock */
     BL_PERIPHERAL_CLOCK_RTC,      /*!< RTC clock */
-    BL_PERIPHERAL_CLOCK_PEC,      /*!< PEC clock  */
+    BL_PERIPHERAL_CLOCK_SIM,      /*!< SIM clock  */
     BL_PERIPHERAL_CLOCK_TIMER0,   /*!< TIMER0 clock */
     BL_PERIPHERAL_CLOCK_TIMER1,   /*!< TIMER1 clock */
     BL_PERIPHERAL_CLOCK_TIMER2,   /*!< TIMER2 clock */

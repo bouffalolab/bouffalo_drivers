@@ -177,7 +177,6 @@ uint32_t const romDriverTable[]={
     [ROM_API_INDEX_GLB_Set_ETH_REF_O_CLK_Sel]                                  = (uint32_t)GLB_Set_ETH_REF_O_CLK_Sel,
     [ROM_API_INDEX_GLB_Set_CAM_CLK]                                            = (uint32_t)GLB_Set_CAM_CLK,
     [ROM_API_INDEX_GLB_Set_SDH_CLK]                                            = (uint32_t)GLB_Set_SDH_CLK,
-    [ROM_API_INDEX_GLB_Set_PEC_CLK]                                            = (uint32_t)GLB_Set_PEC_CLK,
     [ROM_API_INDEX_GLB_Set_AHB2QSPI_CLK]                                       = (uint32_t)GLB_Set_AHB2QSPI_CLK,
     [ROM_API_INDEX_GLB_Config_SDIO_Host_Cmd0_Reset]                            = (uint32_t)GLB_Config_SDIO_Host_Cmd0_Reset,
     [ROM_API_INDEX_GLB_Config_SDIO_Host_Reset_System]                          = (uint32_t)GLB_Config_SDIO_Host_Reset_System,

@@ -258,15 +258,6 @@ typedef struct {
   * @}
   */
 
-/** @defgroup GLB PEC clock type definition
-  * @{
-  */
-#define GLB_PEC_CLK_MCU_MUXPLL_160M         (0) /*!< Select MCU MUXPLL 160M as PEC clock */
-#define GLB_PEC_CLK_XCLK                    (1) /*!< Select xclk as PEC clock */
-/**
-  * @}
-  */
-
 /** @defgroup GLB UART sig swap group type definition
   * @{
   */
@@ -812,7 +803,6 @@ typedef struct {
 #define GLB_AHB_CLOCK_IP_AUADC             (45)
 #define GLB_AHB_CLOCK_IP_DMA_GPIO          (46)
 #define GLB_AHB_CLOCK_IP_MM_MISC           (47)
-#define GLB_AHB_CLOCK_IP_PEC               (48)
 
 /**
   * @}
@@ -1068,12 +1058,6 @@ typedef union {
  */
 #define IS_GLB_SPI_CLK_TYPE(type) (((type) == GLB_SPI_CLK_MCU_MUXPLL_160M) || \
                                    ((type) == GLB_SPI_CLK_XCLK))
-
-/** @defgroup  GLB_PEC_CLK_TYPE
- *  @{
- */
-#define IS_GLB_PEC_CLK_TYPE(type) (((type) == GLB_PEC_CLK_MCU_MUXPLL_160M) || \
-                                   ((type) == GLB_PEC_CLK_XCLK))
 
 /** @defgroup  GLB_PWM1_IO_SEL_TYPE
  *  @{
@@ -1453,7 +1437,6 @@ typedef union {
 #define GLB_AHB_CLOCK_AUADC           (1ULL << GLB_AHB_CLOCK_IP_AUADC)
 #define GLB_AHB_CLOCK_DMA_GPIO        (1ULL << GLB_AHB_CLOCK_IP_DMA_GPIO)
 #define GLB_AHB_CLOCK_MM_MISC         (1ULL << GLB_AHB_CLOCK_IP_MM_MISC)
-#define GLB_AHB_CLOCK_PEC             (1ULL << GLB_AHB_CLOCK_IP_PEC)
 
 #define GLB_AUTO_CALC_XTAL_FLAG_MASK  0x0000ff00
 #define GLB_AUTO_CALC_XTAL_FLAG_VALUE 0x5800
@@ -1519,7 +1502,6 @@ BL_Err_Type GLB_Invert_ETH_REF_O_CLK(uint8_t enable);
 BL_Err_Type GLB_Set_ETH_REF_O_CLK_Sel(uint8_t clkSel);
 BL_Err_Type GLB_Set_CAM_CLK(uint8_t enable, uint8_t clkSel, uint8_t div);
 BL_Err_Type GLB_Set_SDH_CLK(uint8_t enable, uint8_t clkSel, uint8_t div);
-BL_Err_Type GLB_Set_PEC_CLK(uint8_t enable, uint8_t clkSel, uint8_t div);
 BL_Err_Type GLB_Set_AHB2QSPI_CLK(uint8_t enable, uint8_t div);
 BL_Err_Type GLB_Config_SDIO_Host_Cmd0_Reset(uint8_t enable);
 BL_Err_Type GLB_Config_SDIO_Host_Reset_System(uint8_t enable);

@@ -2021,45 +2021,6 @@ BL_Err_Type GLB_Set_SDH_CLK(uint8_t enable, uint8_t clkSel, uint8_t div)
 }
 
 /****************************************************************************/ /**
- * @brief  set PEC clock
- *
- * @param  enable: Enable or disable
- * @param  clkSel: PEC clock type, this parameter can be one of the following values:
- *           @arg GLB_PEC_CLK_MCU_MUXPLL_160M
- *           @arg GLB_PEC_CLK_XCLK
- * @param  div: clock divider
- *
- * @return SUCCESS or ERROR
- *
-*******************************************************************************/
-BL_Err_Type GLB_Set_PEC_CLK(uint8_t enable, uint8_t clkSel, uint8_t div)
-{
-    uint32_t tmpVal = 0;
-
-    CHECK_PARAM(IS_GLB_PEC_CLK_TYPE(clkSel));
-    CHECK_PARAM((div <= 0x31));
-
-    tmpVal = BL_RD_REG(GLB_BASE, GLB_PEC_CFG0);
-    tmpVal = BL_CLR_REG_BIT(tmpVal, GLB_PEC_CLK_EN);
-    BL_WR_REG(GLB_BASE, GLB_PEC_CFG0, tmpVal);
-
-    tmpVal = BL_RD_REG(GLB_BASE, GLB_PEC_CFG0);
-    tmpVal = BL_SET_REG_BITS_VAL(tmpVal, GLB_PEC_CLK_SEL, clkSel);
-    tmpVal = BL_SET_REG_BITS_VAL(tmpVal, GLB_PEC_CLK_DIV, div);
-    BL_WR_REG(GLB_BASE, GLB_PEC_CFG0, tmpVal);
-
-    tmpVal = BL_RD_REG(GLB_BASE, GLB_PEC_CFG0);
-    if (enable) {
-        tmpVal = BL_SET_REG_BIT(tmpVal, GLB_PEC_CLK_EN);
-    } else {
-        tmpVal = BL_CLR_REG_BIT(tmpVal, GLB_PEC_CLK_EN);
-    }
-    BL_WR_REG(GLB_BASE, GLB_PEC_CFG0, tmpVal);
-
-    return SUCCESS;
-}
-
-/****************************************************************************/ /**
  * @brief  set AHB2QSPI clock
  *
  * @param  enable: Enable or disable
@@ -2770,9 +2731,6 @@ BL_Err_Type ATTR_CLOCK_SECTION GLB_PER_Clock_Gate(uint64_t ips)
                 case GLB_AHB_CLOCK_IP_MM_MISC:
                     tmpValCfg2 &= ~(1 << 16);
                     break;
-                case GLB_AHB_CLOCK_IP_PEC:
-                    tmpValCfg2 &= ~(1 << 25);
-                    break;
                 default:
                     break;
             }
@@ -2937,9 +2895,6 @@ BL_Err_Type ATTR_CLOCK_SECTION GLB_PER_Clock_UnGate(uint64_t ips)
                     break;
                 case GLB_AHB_CLOCK_IP_MM_MISC:
                     tmpValCfg2 |= (1 << 16);
-                    break;
-                case GLB_AHB_CLOCK_IP_PEC:
-                    tmpValCfg2 |= (1 << 25);
                     break;
                 default:
                     break;

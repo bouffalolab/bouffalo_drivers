@@ -1599,6 +1599,7 @@ typedef enum {
     ((int (*)(struct bflb_device_s *dev, struct bflb_sha512_link_ctx_s *ctx, const uint8_t *input, uint64_t len)) \
     ROM_APITABLE[BFLB_LHAL_ROMAPI_INDEX_bflb_sha512_link_update])
 
+#if 0
 #define romapi_bflb_sha1_link_finish \
     ((void (*)(struct bflb_device_s *dev, struct bflb_sha1_link_ctx_s *ctx, uint8_t *output)) \
     ROM_APITABLE[BFLB_LHAL_ROMAPI_INDEX_bflb_sha1_link_finish])
@@ -1610,6 +1611,7 @@ typedef enum {
 #define romapi_bflb_sha512_link_finish \
     ((void (*)(struct bflb_device_s *dev, struct bflb_sha512_link_ctx_s *ctx, uint8_t *output)) \
     ROM_APITABLE[BFLB_LHAL_ROMAPI_INDEX_bflb_sha512_link_finish])
+#endif
 
 #define romapi_bflb_group0_request_sha_access \
     ((int (*)(struct bflb_device_s *dev)) \
@@ -1941,7 +1943,6 @@ typedef enum {
 #define romapi_bflb_flash_secreg_callapi_after \
     ((void (*)(const spi_flash_cfg_type *flash_cfg, struct callapi_content *content)) \
     ROM_APITABLE[BFLB_LHAL_ROMAPI_INDEX_bflb_flash_secreg_callapi_after])
-#endif
 
 #define romapi_bflb_flash_secreg_get_param \
     ((int (*)(uint32_t jid, const bflb_flash_secreg_param_t **param)) \
@@ -2006,6 +2007,8 @@ typedef enum {
 #define romapi_bflb_flash_secreg_erase \
     ((int (*)(bflb_flash_otp_config_t *otp_cfg, uint32_t addr, uint32_t len)) \
     ROM_APITABLE[BFLB_LHAL_ROMAPI_INDEX_bflb_flash_secreg_erase])
+
+#endif
 
 #define romapi_bflb_sf_cfg_init_ext_flash_gpio \
     ((int (*)(uint8_t ext_flash_pin)) \

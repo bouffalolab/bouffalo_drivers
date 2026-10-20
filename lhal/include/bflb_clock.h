@@ -300,15 +300,6 @@
     } while (0)
 #endif
 
-#if defined(BL618DG) || defined(BL616CL)
-#define PERIPHERAL_CLOCK_PEC_ENABLE()                             \
-    do {                                                          \
-        volatile uint32_t regval = getreg32(BFLB_GLB_CGEN2_BASE); \
-        regval |= (1 << 25);                                      \
-        putreg32(regval, BFLB_GLB_CGEN2_BASE);                    \
-    } while (0)
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -1433,11 +1433,6 @@
 #define GLB_SWRST_JENC_LEN                (1U)
 #define GLB_SWRST_JENC_MSK                (((1U << GLB_SWRST_JENC_LEN) - 1) << GLB_SWRST_JENC_POS)
 #define GLB_SWRST_JENC_UMSK               (~(((1U << GLB_SWRST_JENC_LEN) - 1) << GLB_SWRST_JENC_POS))
-#define GLB_SWRST_S1_EXT_PIO              GLB_SWRST_S1_EXT_PIO
-#define GLB_SWRST_S1_EXT_PIO_POS          (28U)
-#define GLB_SWRST_S1_EXT_PIO_LEN          (1U)
-#define GLB_SWRST_S1_EXT_PIO_MSK          (((1U << GLB_SWRST_S1_EXT_PIO_LEN) - 1) << GLB_SWRST_S1_EXT_PIO_POS)
-#define GLB_SWRST_S1_EXT_PIO_UMSK         (~(((1U << GLB_SWRST_S1_EXT_PIO_LEN) - 1) << GLB_SWRST_S1_EXT_PIO_POS))
 
 /* 0x544 : swrst_s1 */
 #define GLB_SWRST_CFG1_OFFSET (0x544)
@@ -1976,11 +1971,6 @@
 #define GLB_CGEN_S1_EXT_DMA2_LEN         (1U)
 #define GLB_CGEN_S1_EXT_DMA2_MSK         (((1U << GLB_CGEN_S1_EXT_DMA2_LEN) - 1) << GLB_CGEN_S1_EXT_DMA2_POS)
 #define GLB_CGEN_S1_EXT_DMA2_UMSK        (~(((1U << GLB_CGEN_S1_EXT_DMA2_LEN) - 1) << GLB_CGEN_S1_EXT_DMA2_POS))
-#define GLB_CGEN_S1_EXT_PIO              GLB_CGEN_S1_EXT_PIO
-#define GLB_CGEN_S1_EXT_PIO_POS          (25U)
-#define GLB_CGEN_S1_EXT_PIO_LEN          (1U)
-#define GLB_CGEN_S1_EXT_PIO_MSK          (((1U << GLB_CGEN_S1_EXT_PIO_LEN) - 1) << GLB_CGEN_S1_EXT_PIO_POS)
-#define GLB_CGEN_S1_EXT_PIO_UMSK         (~(((1U << GLB_CGEN_S1_EXT_PIO_LEN) - 1) << GLB_CGEN_S1_EXT_PIO_POS))
 #define GLB_CGEN_S1_EXT_RSVD10           GLB_CGEN_S1_EXT_RSVD10
 #define GLB_CGEN_S1_EXT_RSVD10_POS       (26U)
 #define GLB_CGEN_S1_EXT_RSVD10_LEN       (1U)
@@ -7724,19 +7714,7 @@ struct glb_reg {
     } spi_cfg0;
 
     /* 0x1b4  reserved */
-    uint8_t RESERVED0x1b4[12];
-
-    /* 0x1C0 : pio_cfg0 */
-    union {
-        struct {
-            uint32_t pio_clk_div    : 5;  /* [ 4: 0],        r/w,        0x3 */
-            uint32_t reserved_5_7   : 3;  /* [ 7: 5],       rsvd,        0x0 */
-            uint32_t pio_clk_en     : 1;  /* [    8],        r/w,        0x1 */
-            uint32_t pio_clk_sel    : 1;  /* [    9],        r/w,        0x0 */
-            uint32_t reserved_10_31 : 22; /* [31:10],       rsvd,        0x0 */
-        } BF;
-        uint32_t WORD;
-    } pio_cfg0;
+    uint8_t RESERVED0x1b4[16];
 
     /* 0x1c4  reserved */
     uint8_t RESERVED0x1c4[12];
@@ -8247,7 +8225,7 @@ struct glb_reg {
             uint32_t swrst_d2xA               : 1; /* [   25],        r/w,        0x0 */
             uint32_t swrst_d2xB               : 1; /* [   26],        r/w,        0x0 */
             uint32_t swrst_jenc               : 1; /* [   27],        r/w,        0x0 */
-            uint32_t swrst_s1_ext_pio         : 1; /* [   28],        r/w,        0x0 */
+            uint32_t swrst_s1_ext_resv        : 1; /* [   28],        r/w,        0x0 */
             uint32_t reserved_29_31           : 3; /* [31:29],       rsvd,        0x0 */
         } BF;
         uint32_t WORD;
@@ -8411,7 +8389,7 @@ struct glb_reg {
             uint32_t cgen_s1_ext_sdh         : 1; /* [   22],        r/w,        0x1 */
             uint32_t cgen_s1_ext_emac        : 1; /* [   23],        r/w,        0x1 */
             uint32_t cgen_s1_ext_dma2        : 1; /* [   24],        r/w,        0x1 */
-            uint32_t cgen_s1_ext_pio         : 1; /* [   25],        r/w,        0x1 */
+            uint32_t cgen_s1_ext_resv        : 1; /* [   25],        r/w,        0x1 */
             uint32_t cgen_s1_ext_rsvd10      : 1; /* [   26],        r/w,        0x1 */
             uint32_t cgen_s1_ext_rsvd11      : 1; /* [   27],        r/w,        0x1 */
             uint32_t reserved_28_31          : 4; /* [31:28],       rsvd,        0x0 */

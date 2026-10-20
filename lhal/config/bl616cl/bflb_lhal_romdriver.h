@@ -725,7 +725,6 @@ typedef enum {
 #define romapi_bflb_flash_secreg_callapi_after \
     ((void (*)(const spi_flash_cfg_type *flash_cfg, struct callapi_content *content)) \
     ROM_APITABLE[BFLB_LHAL_ROMAPI_INDEX_bflb_flash_secreg_callapi_after])
-#endif
 
 #define romapi_bflb_flash_secreg_get_param \
     ((int (*)(uint32_t jid, const bflb_flash_secreg_param_t **param)) \
@@ -790,6 +789,7 @@ typedef enum {
 #define romapi_bflb_flash_secreg_erase \
     ((int (*)(bflb_flash_otp_config_t *otp_cfg, uint32_t addr, uint32_t len)) \
     ROM_APITABLE[BFLB_LHAL_ROMAPI_INDEX_bflb_flash_secreg_erase])
+#endif
 
 #if 0
 #define romapi_bflb_sf_cfg_init_ext_flash_gpio \

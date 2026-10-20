@@ -506,11 +506,6 @@ BL_Err_Type GLB_Set_SDH_CLK(uint8_t enable, uint8_t clkSel, uint8_t div) {
 }
 
 __ALWAYS_INLINE ATTR_TCM_SECTION
-BL_Err_Type GLB_Set_PEC_CLK(uint8_t enable, uint8_t clkSel, uint8_t div) {
-    return RomDriver_GLB_Set_PEC_CLK(enable, clkSel, div);
-}
-
-__ALWAYS_INLINE ATTR_TCM_SECTION
 BL_Err_Type GLB_Set_AHB2QSPI_CLK(uint8_t enable, uint8_t div) {
     return RomDriver_GLB_Set_AHB2QSPI_CLK(enable, div);
 }

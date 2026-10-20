@@ -245,9 +245,6 @@
 #define GPIO_FUNC_DBI_QSPI  (24 << GPIO_FUNC_SHIFT)
 #define GPIO_FUNC_AUDAC_PWM (25 << GPIO_FUNC_SHIFT)
 #define GPIO_FUNC_JTAG      (26 << GPIO_FUNC_SHIFT)
-#if defined(BL616CL)
-#define GPIO_FUNC_PEC       (27 << GPIO_FUNC_SHIFT)
-#endif
 #define GPIO_FUNC_CLKOUT    (31 << GPIO_FUNC_SHIFT)
 #elif 0 
 #define GPIO_FUNC_SDH     (0 << GPIO_FUNC_SHIFT)
@@ -325,7 +322,6 @@
 #define GPIO_FUNC_DPI       (24 << GPIO_FUNC_SHIFT)
 #define GPIO_FUNC_SPDT      (25 << GPIO_FUNC_SHIFT)
 #define GPIO_FUNC_JTAG_M0   (26 << GPIO_FUNC_SHIFT)
-#define GPIO_FUNC_PEC       (27 << GPIO_FUNC_SHIFT)
 #define GPIO_FUNC_CLKOUT    (31 << GPIO_FUNC_SHIFT)
 #endif
 

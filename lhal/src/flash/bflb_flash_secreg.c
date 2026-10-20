@@ -282,7 +282,29 @@ static const ATTR_TCM_CONST_SECTION bflb_flash_secreg_param_t flash_secreg_param
     .lb_read_loop = 1,
 };
 
+/* IS25LP256H: four 256-byte Information Rows, Function Register IRL[3:0]. */
+__UNUSED static const ATTR_TCM_CONST_SECTION bflb_flash_secreg_param_t flash_secreg_param_issi_25lp256h = {
+    .region_offset = 0,
+    .region_count = 4,
+    .region_size = 0x10,
+    .secreg_size = 0x1,
+    .api_type = BFLB_FLASH_SECREG_API_TYPE_ISSI,
+    .lb_share = 0,
+    .lb_offset = 4,
+    .lb_write_cmd = 0x42,
+    .lb_write_len = 1,
+    .lb_read_cmd[0] = 0x48,
+    .lb_read_len = 1,
+    .lb_read_loop = 1,
+};
+
 __UNUSED static const ATTR_TCM_CONST_SECTION struct flash_params_s flash_params[] = {
+
+    {
+        /*!< IS25LP256H */
+        .jedec_id = 0x19609d,
+        .param = flash_secreg_param_issi_25lp256h,
+    },
 
     {
         /*!< BY25Q80BS */
@@ -966,9 +988,9 @@ int ATTR_TCM_SECTION bflb_flash_secreg_region_foreach(bflb_flash_otp_config_t *o
             break;
         }
     }
-#endif
 
     return 0;
+#endif
 }
 
 /*****************************************************************************
@@ -1043,7 +1065,7 @@ int ATTR_TCM_SECTION bflb_flash_secreg_set_lockbits(bflb_flash_otp_config_t *otp
     } else {
         /* Calculate valid bits mask based on region count */
         lb_mask = ~(0xff << param->region_count);
-        if (lb_mask & lockbits) {
+        if (lockbits & ~lb_mask) {
             /*!< invalid lockbits */
             return -1;
         }
@@ -1403,11 +1425,15 @@ int ATTR_TCM_SECTION bflb_flash_secreg_get_info(bflb_flash_otp_config_t *otp_cfg
 
     uint8_t index;
 
-    if (param == NULL) {
+    if (param == NULL || info == NULL || param->secreg_size == 0) {
         return -1;
     }
 
-    index = addr / param->secreg_size;
+    index = addr / (param->secreg_size * 256);
+
+    if (index >= param->region_count) {
+        return -1;
+    }
 
     return bflb_flash_secreg_get_info_by_idx(otp_cfg, index, info);
 #endif

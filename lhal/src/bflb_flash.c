@@ -499,6 +499,7 @@ static int ATTR_TCM_SECTION flash_config_init(spi_flash_cfg_type *p_flash_cfg, u
     if (jid == 0x1660EF) {
         p_flash_cfg->io_mode = SF_CTRL_QIO_MODE;
         p_flash_cfg->c_read_support = 0x00;
+        p_flash_cfg->c_read_mode = 0xFF;
     }
 
 #ifdef CONFIG_FLASH_2LINE

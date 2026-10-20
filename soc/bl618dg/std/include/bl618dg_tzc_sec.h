@@ -162,7 +162,7 @@ typedef enum {
     TZC_SEC_SLAVE_S1A_CKS,        /*!< TZC Slave:CKS */
     TZC_SEC_SLAVE_S1A_DBI,        /*!< TZC Slave:DBI */
     TZC_SEC_SLAVE_S1A_I2S,        /*!< TZC Slave:I2S */
-    TZC_SEC_SLAVE_S1A_PEC,        /*!< TZC Slave:PEC */
+    TZC_SEC_SLAVE_S1A_SIM,        /*!< TZC Slave:SIM */
 
     TZC_SEC_SLAVE_S3_EMAC_B = 56, /*!< TZC Slave:EMAC_B */
     TZC_SEC_SLAVE_S3_BZ,          /*!< TZC Slave:BZ */
@@ -298,7 +298,13 @@ typedef enum {
  *  @{
  */
 
-#define TZC_SEC_MAX_AUTH_GRP 3
+#define TZC_SEC_MAX_AUTH_GRP       1U
+/* Four-bit access mask shared by _Advance and _Regionx APIs. */
+#define TZC_SEC_ACCESS_MASK  0x0fU
+
+/* Legacy _Advance APIs use this name for the four-bit access mask. */
+#define IS_TZC_SEC_GROUP_TYPE(group) \
+    (((group) & ~TZC_SEC_ACCESS_MASK) == 0U)
 /*@} end of group TZC_SEC_Public_Macros */
 
 /** @defgroup  TZC_SEC_Public_Functions
@@ -312,7 +318,6 @@ void Tzc_Sec_Set_Codec_Group(uint8_t group);
 void Tzc_Sec_Set_CPU_Group(uint8_t cpu, uint8_t group);
 void Tzc_Sec_Set_Slave_Group(TZC_SEC_Slave_Type slaveType, uint8_t group);
 void Tzc_Sec_Set_Glb_Ctrl_Group(TZC_SEC_GLB_Ctrl_Type slaveType, uint8_t group);
-void Tzc_Sec_ROM_Access_Set(uint8_t region, uint32_t startAddr, uint32_t length, uint8_t group);
 void Tzc_Sec_ROM_Access_Set_Advance(uint8_t region, uint32_t startAddr, uint32_t length, uint8_t group);
 void Tzc_Sec_OCRAM_Access_Set_Advance(uint8_t region, uint32_t startAddr, uint32_t length, uint8_t group);
 void Tzc_Sec_OCRAM_Access_Set_Regionx(uint8_t group);
@@ -324,10 +329,8 @@ void Tzc_Sec_XRAM_Access_Set_Advance(uint8_t region, uint32_t startAddr, uint32_
 void Tzc_Sec_XRAM_Access_Set_Regionx(uint8_t group);
 void Tzc_Sec_Mini_Ram_Access_Set_Advance(uint8_t region, uint32_t startAddr, uint32_t length, uint8_t group);
 void Tzc_Sec_Mini_Ram_Access_Set_Regionx(uint8_t group);
-void Tzc_Sec_Flash_Access_Set(uint8_t region, uint32_t startAddr, uint32_t length, uint8_t group);
 void Tzc_Sec_Flash_Access_Set_Advance(uint8_t region, uint32_t startAddr, uint32_t length, uint8_t group);
 void Tzc_Sec_Flash_Access_Set_Regionx(uint8_t group);
-void Tzc_Sec_PSRAMB_Access_Set(uint8_t region, uint32_t startAddr, uint32_t length, uint8_t group);
 void Tzc_Sec_PSRAMB_Access_Set_Advance(uint8_t region, uint32_t startAddr, uint32_t length, uint8_t group);
 void Tzc_Sec_PSRAMB_Access_Release(void);
 void Tzc_Sec_Set_Se_Ctrl_Mode(TZC_SEC_SE_Ctrl_Mode mode);

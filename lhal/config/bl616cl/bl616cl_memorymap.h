@@ -101,7 +101,6 @@
 #define DVP2AXI0_BASE                        ((uint32_t)0x20057000)
 #define DVP2AXI1_BASE                        ((uint32_t)0x20058000)
 #define MJPEG_BASE                           ((uint32_t)0x20059000)
-#define PEC_BASE                             ((uint32_t)0x2005A000)
 #define SDH_BASE                             ((uint32_t)0x20060000)
 #define EMAC_BASE                            ((uint32_t)0x20070000)
 #define USB_BASE                             ((uint32_t)0x20072000)

@@ -888,9 +888,9 @@ typedef struct {
 #define GLB_AHB_CLOCK_IP_AUPDM             (52)
 #define GLB_AHB_CLOCK_IP_GAUGE             (53)
 #define GLB_AHB_CLOCK_IP_DBI               (54)
-#define GLB_AHB_CLOCK_IP_AUSOLO_TOP        (55)
-#define GLB_AHB_CLOCK_IP_DMA_GPIO          (56)
-#define GLB_AHB_CLOCK_IP_MM_MISC           (57)
+#define GLB_AHB_CLOCK_IP_AUSOLO_TOP        (57)
+#define GLB_AHB_CLOCK_IP_DMA_GPIO          (58)
+#define GLB_AHB_CLOCK_IP_MM_MISC           (59)
 /**
   * @}
   */

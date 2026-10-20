@@ -81,7 +81,7 @@ extern "C" {
 #define AON_LDO08_AON_LEVEL_0P625V        (1)  /*!< AON LDO08 AON voltage 0.625V */
 #define AON_LDO08_AON_LEVEL_0P650V        (2)  /*!< AON LDO08 AON voltage 0.650V */
 #define AON_LDO08_AON_LEVEL_0P675V        (3)  /*!< AON LDO08 AON voltage 0.675V */
-#define AON_LDO08_AON_LEVEL_0P700V        (3)  /*!< AON LDO08 AON voltage 0.700V */
+#define AON_LDO08_AON_LEVEL_0P700V        (4)  /*!< AON LDO08 AON voltage 0.700V */
 #define AON_LDO08_AON_LEVEL_0P725V        (5)  /*!< AON LDO08 AON voltage 0.725V */
 #define AON_LDO08_AON_LEVEL_0P750V        (6)  /*!< AON LDO08 AON voltage 0.750V */
 #define AON_LDO08_AON_LEVEL_0P775V        (7)  /*!< AON LDO08 AON voltage 0.775V */

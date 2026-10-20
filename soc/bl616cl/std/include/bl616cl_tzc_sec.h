@@ -105,7 +105,7 @@ typedef enum {
     TZC_SEC_SLAVE_S2_D2XA,          /*!< TZC Slave:D2XA */
     TZC_SEC_SLAVE_S2_D2XB,          /*!< TZC Slave:D2XB */
     TZC_SEC_SLAVE_S2_JENC,          /*!< TZC Slave:JENC */
-    TZC_SEC_SLAVE_S2_PEC,           /*!< TZC Slave:PEC */
+    TZC_SEC_SLAVE_S2_SIM,           /*!< TZC Slave:SIM */
     TZC_SEC_SLAVE_S1A_UART0 = 39,   /*!< TZC Slave:UART0 */
     TZC_SEC_SLAVE_S1A_UART1,        /*!< TZC Slave:UART1 */
     TZC_SEC_SLAVE_S1A_SPI,          /*!< TZC Slave:SPI */

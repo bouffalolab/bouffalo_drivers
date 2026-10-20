@@ -81,7 +81,7 @@ enum PSM_EVENT {
 #define BL_LP_BLE_WAKE_TO_EXPIRY_US                (BL_LP_BLE_MAINTENANCE_LEAD_US + BL_LP_BLE_PDS_EARLY_US)
 
 #define LP_FW_BLE_PARA_MAGIC                       0x424C4550UL /* "BLEP" */
-#define LP_FW_BLE_PARA_VERSION                     21U
+#define LP_FW_BLE_PARA_VERSION                     22U
 #define LP_FW_BLE_DFE_MODE_STANDALONE              0U
 #define LP_FW_BLE_DFE_MODE_COMBO                   4U
 #define LP_FW_BLE_SPDT_GPIO_INVALID                0xFFU
@@ -336,6 +336,7 @@ typedef struct {
     uint8_t dfe_mode;
     uint8_t spdt_enabled;
     uint8_t spdt_gpio;
+    uint8_t rc32k_trigger_en; /* RC32K XTAL count: ADV default 0, CONN default 1 */
     uint8_t reserved;
     /*
      * LTOS connected-state exploration (ble_activity_state == LP_FW_BLE_ST_CONN).

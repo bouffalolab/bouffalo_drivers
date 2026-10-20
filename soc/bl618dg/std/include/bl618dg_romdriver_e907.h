@@ -209,7 +209,6 @@ typedef enum {
     ROM_API_INDEX_GLB_Set_I2S_CLK                                   = 135,
     ROM_API_INDEX_GLB_Set_SPI0_2_CLK                                = 136,
     ROM_API_INDEX_GLB_SPI_Sig_Swap_Set                              = 137,
-    ROM_API_INDEX_GLB_Set_PEC_CLK                                   = 138,
     ROM_API_INDEX_GLB_Set_PWM1_IO_Sel                               = 139,
     ROM_API_INDEX_GLB_Set_PDM_IO_Sel                                = 140,
     ROM_API_INDEX_GLB_Set_DBI_CLK                                   = 141,
@@ -1017,10 +1016,6 @@ typedef enum {
 #define RomDriver_GLB_SPI_Sig_Swap_Set \
     ((BL_Err_Type (*)(uint8_t group, uint8_t swap)) \
     STD_ROM_APITABLE[ROM_API_INDEX_GLB_SPI_Sig_Swap_Set])
-
-#define RomDriver_GLB_Set_PEC_CLK \
-    ((BL_Err_Type (*)(uint8_t enable, uint8_t clkSel, uint8_t div)) \
-    STD_ROM_APITABLE[ROM_API_INDEX_GLB_Set_PEC_CLK])
 
 #define RomDriver_GLB_Set_PWM1_IO_Sel \
     ((BL_Err_Type (*)(uint8_t ioSel)) \

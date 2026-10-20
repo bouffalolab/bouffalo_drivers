@@ -289,10 +289,12 @@ int bflb_sha512_link_update(struct bflb_device_s *dev,
  * @param [in] dev
  * @param [in] ctx
  * @param [in] output
+ * @return 0 on success, negative errno (e.g. -ETIMEDOUT) if the padding update failed.
+ *         On failure no digest is copied and the digest bytes of output are cleared.
  */
-void bflb_sha1_link_finish(struct bflb_device_s *dev,
-                           struct bflb_sha1_link_ctx_s *ctx,
-                           uint8_t *output);
+int bflb_sha1_link_finish(struct bflb_device_s *dev,
+                          struct bflb_sha1_link_ctx_s *ctx,
+                          uint8_t *output);
 
 /**
  * @brief
@@ -300,10 +302,12 @@ void bflb_sha1_link_finish(struct bflb_device_s *dev,
  * @param [in] dev
  * @param [in] ctx
  * @param [in] output
+ * @return 0 on success, negative errno (e.g. -ETIMEDOUT) if the padding update failed.
+ *         On failure no digest is copied and the digest bytes of output are cleared.
  */
-void bflb_sha256_link_finish(struct bflb_device_s *dev,
-                             struct bflb_sha256_link_ctx_s *ctx,
-                             uint8_t *output);
+int bflb_sha256_link_finish(struct bflb_device_s *dev,
+                            struct bflb_sha256_link_ctx_s *ctx,
+                            uint8_t *output);
 
 /**
  * @brief
@@ -311,10 +315,12 @@ void bflb_sha256_link_finish(struct bflb_device_s *dev,
  * @param [in] dev
  * @param [in] ctx
  * @param [in] output
+ * @return 0 on success, negative errno (e.g. -ETIMEDOUT) if the padding update failed.
+ *         On failure no digest is copied and the digest bytes of output are cleared.
  */
-void bflb_sha512_link_finish(struct bflb_device_s *dev,
-                             struct bflb_sha512_link_ctx_s *ctx,
-                             uint8_t *output);
+int bflb_sha512_link_finish(struct bflb_device_s *dev,
+                            struct bflb_sha512_link_ctx_s *ctx,
+                            uint8_t *output);
 
 /**
  * @brief

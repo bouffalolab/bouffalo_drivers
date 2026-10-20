@@ -137,8 +137,6 @@ typedef enum {
     GPIO_DMA_IRQn = IRQ_NUM_BASE + 31,                          /*!< GPIO DMA Interrupt                             */
     I2C0_IRQn = IRQ_NUM_BASE + 32,                              /*!< I2C0 Interrupt                                 */
     PWM_IRQn = IRQ_NUM_BASE + 33,                               /*!< PWM Interrupt                                  */
-    PEC_INT0_IRQn = IRQ_NUM_BASE + 34,                          /*!< PEC_INT0 Interrupt                             */
-    PEC_INT1_IRQn = IRQ_NUM_BASE + 35,                          /*!< PEC_INT1 Interrupt                             */
     TIMER0_CH0_IRQn = IRQ_NUM_BASE + 36,                        /*!< Timer0 Channel 0 Interrupt                     */
     TIMER0_CH1_IRQn = IRQ_NUM_BASE + 37,                        /*!< Timer0 Channel 1 Interrupt                     */
     TIMER0_WDT_IRQn = IRQ_NUM_BASE + 38,                        /*!< Timer0 Watch Dog Interrupt                     */
@@ -258,8 +256,6 @@ typedef enum {
 #define GPIO_DMA_IRQn                          (IRQn_LAST + 31)
 #define I2C0_IRQn                              (IRQn_LAST + 32)
 #define PWM_IRQn                               (IRQn_LAST + 33)
-#define PEC_INT0_IRQn                          (IRQn_LAST + 34)
-#define PEC_INT1_IRQn                          (IRQn_LAST + 34)
 #define TIMER0_CH0_IRQn                        (IRQn_LAST + 36)
 #define TIMER0_CH1_IRQn                        (IRQn_LAST + 37)
 #define TIMER0_WDT_IRQn                        (IRQn_LAST + 38)
@@ -481,7 +477,6 @@ typedef enum {
 #define CKS_BASE   ((uint32_t)0x2001C000)
 #define DBI_BASE   ((uint32_t)0x2001D000)
 #define I2S_BASE   ((uint32_t)0x2001E000)
-#define PEC_BASE   ((uint32_t)0x2001F000)
 #if !defined(CPU_MODEL_A0)
 #define DMA1_BASE  ((uint32_t)0x20021000)
 #define AUDAC_BASE ((uint32_t)0x20022000)

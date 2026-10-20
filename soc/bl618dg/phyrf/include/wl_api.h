@@ -367,6 +367,12 @@ void wl_rf_temp_optimize(int16_t temperature); // rf optimize for temperature
 #define BZ_STAND_ALONE_RF_EN (1)
 #endif
 
+
+// *STAND_ALONE_BLE_LP_ONLY_EN=1 : enable standalone-ble rf and save about 2mA current, but disable standalone-btclassic
+#ifndef STAND_ALONE_BLE_LP_ONLY_EN
+#define STAND_ALONE_BLE_LP_ONLY_EN (0)
+#endif
+
 // if build the LPFW, please define 1 
 #ifndef LPFW_CFG_RF
 #define LPFW_CFG_RF (0)

@@ -892,15 +892,17 @@ int bflb_sha512_link_update(struct bflb_device_s *dev,
 #endif
 }
 
-void bflb_sha1_link_finish(struct bflb_device_s *dev,
-                           struct bflb_sha1_link_ctx_s *ctx,
-                           uint8_t *output)
+int bflb_sha1_link_finish(struct bflb_device_s *dev,
+                          struct bflb_sha1_link_ctx_s *ctx,
+                          uint8_t *output)
 {
 #ifdef romapi_bflb_sha1_link_finish
     return romapi_bflb_sha1_link_finish(dev, ctx, output);
 #else
+    int ret;
     uint32_t last, padn;
     uint32_t high, low;
+    uint32_t digest_len;
     uint8_t msgLen[8];
 
     uint32_t reg_base;
@@ -920,39 +922,52 @@ void bflb_sha1_link_finish(struct bflb_device_s *dev,
     last = ctx->total[0] & 0x3F;
     padn = (last < 56) ? (56 - last) : (120 - last);
 
-    bflb_sha1_link_update(dev, ctx, (uint8_t *)ctx->sha_padding, padn);
-    bflb_sha1_link_update(dev, ctx, msgLen, 8);
+    ret = bflb_sha1_link_update(dev, ctx, (uint8_t *)ctx->sha_padding, padn);
+    if (ret == 0) {
+        ret = bflb_sha1_link_update(dev, ctx, msgLen, 8);
+    }
 
-    /* Get result according to SHA mode,result is placed in (link address + offset:8) */
+    /* Get digest length according to SHA mode */
     switch (sha_mode) {
         case 0:
-            arch_memcpy_fast(output, (uint8_t *)(uintptr_t)(ctx->link_addr + 8), 32);
+            digest_len = 32;
             break;
 
         case 1:
-            arch_memcpy_fast(output, (uint8_t *)(uintptr_t)(ctx->link_addr + 8), 28);
+            digest_len = 28;
             break;
 
         case 2:
-            arch_memcpy_fast(output, (uint8_t *)(uintptr_t)(ctx->link_addr + 8), 20);
+            digest_len = 20;
             break;
 
         case 3:
-            arch_memcpy_fast(output, (uint8_t *)(uintptr_t)(ctx->link_addr + 8), 20);
+            digest_len = 20;
             break;
 
         default:
+            digest_len = 0;
             break;
+    }
+
+    if (ret == 0) {
+        /* Result is placed in (link address + offset:8) */
+        arch_memcpy_fast(output, (uint8_t *)(uintptr_t)(ctx->link_addr + 8), digest_len);
+    } else {
+        /* Padding failed, the result is incomplete: do not output it, clear the digest buffer */
+        arch_memset(output, 0, digest_len);
     }
 
     /* Choose new hash in the next time */
     *((uint32_t *)(uintptr_t)ctx->link_addr) &= ~0x40;
+
+    return ret;
 #endif
 }
 
-void bflb_sha256_link_finish(struct bflb_device_s *dev,
-                             struct bflb_sha256_link_ctx_s *ctx,
-                             uint8_t *output)
+int bflb_sha256_link_finish(struct bflb_device_s *dev,
+                            struct bflb_sha256_link_ctx_s *ctx,
+                            uint8_t *output)
 {
 #ifdef romapi_bflb_sha256_link_finish
     return romapi_bflb_sha256_link_finish(dev, ctx, output);
@@ -961,15 +976,17 @@ void bflb_sha256_link_finish(struct bflb_device_s *dev,
 #endif
 }
 
-void bflb_sha512_link_finish(struct bflb_device_s *dev,
-                             struct bflb_sha512_link_ctx_s *ctx,
-                             uint8_t *output)
+int bflb_sha512_link_finish(struct bflb_device_s *dev,
+                            struct bflb_sha512_link_ctx_s *ctx,
+                            uint8_t *output)
 {
 #ifdef romapi_bflb_sha512_link_finish
-    romapi_bflb_sha512_link_finish(dev, ctx, output);
+    return romapi_bflb_sha512_link_finish(dev, ctx, output);
 #else
+    int ret;
     uint64_t last, padn;
     uint64_t high, low;
+    uint32_t digest_len;
     uint8_t msgLen[16];
 
     uint32_t reg_base;
@@ -989,33 +1006,46 @@ void bflb_sha512_link_finish(struct bflb_device_s *dev,
     last = ctx->total[0] & 0x7F;
     padn = (last < 112) ? (112 - last) : (240 - last);
 
-    bflb_sha512_link_update(dev, ctx, (uint8_t *)ctx->sha_padding, padn);
-    bflb_sha512_link_update(dev, ctx, msgLen, 16);
+    ret = bflb_sha512_link_update(dev, ctx, (uint8_t *)ctx->sha_padding, padn);
+    if (ret == 0) {
+        ret = bflb_sha512_link_update(dev, ctx, msgLen, 16);
+    }
 
-    /* Get result according to SHA mode,result is placed in (link address + offset:8) */
+    /* Get digest length according to SHA mode */
     switch (sha_mode) {
         case 4:
-            arch_memcpy_fast(output, (uint8_t *)(uintptr_t)(ctx->link_addr + 8), 64);
+            digest_len = 64;
             break;
 
         case 5:
-            arch_memcpy_fast(output, (uint8_t *)(uintptr_t)(ctx->link_addr + 8), 48);
+            digest_len = 48;
             break;
 
         case 6:
-            arch_memcpy_fast(output, (uint8_t *)(uintptr_t)(ctx->link_addr + 8), 28);
+            digest_len = 28;
             break;
 
         case 7:
-            arch_memcpy_fast(output, (uint8_t *)(uintptr_t)(ctx->link_addr + 8), 32);
+            digest_len = 32;
             break;
 
         default:
+            digest_len = 0;
             break;
+    }
+
+    if (ret == 0) {
+        /* Result is placed in (link address + offset:8) */
+        arch_memcpy_fast(output, (uint8_t *)(uintptr_t)(ctx->link_addr + 8), digest_len);
+    } else {
+        /* Padding failed, the result is incomplete: do not output it, clear the digest buffer */
+        arch_memset(output, 0, digest_len);
     }
 
     /* Choose new hash in the next time */
     *((uint32_t *)(uintptr_t)ctx->link_addr) &= ~0x40;
+
+    return ret;
 #endif
 }
 

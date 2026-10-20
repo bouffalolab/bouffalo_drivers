@@ -60,8 +60,6 @@ uint32_t bflb_clk_get_peripheral_clock(uint8_t type, uint8_t idx)
         return Clock_Peripheral_Clock_Get(BL_PERIPHERAL_CLOCK_I2S);
     } else if (type == BFLB_DEVICE_TYPE_RTC) {
         return Clock_Peripheral_Clock_Get(BL_PERIPHERAL_CLOCK_RTC);
-    } else if (type == BFLB_DEVICE_TYPE_PEC) {
-        return Clock_Peripheral_Clock_Get(BL_PERIPHERAL_CLOCK_PEC);
     }
     return 0;
 }
@@ -154,10 +152,6 @@ uint32_t bflb_peripheral_clock_get_by_id(uint8_t peri)
             break;
         case BFLB_PERIPHERAL_RTC:
             dev_type = BFLB_DEVICE_TYPE_RTC;
-            idx = 0;
-            break;
-        case BFLB_PERIPHERAL_PEC:
-            dev_type = BFLB_DEVICE_TYPE_PEC;
             idx = 0;
             break;
         default:
@@ -291,9 +285,6 @@ int ATTR_CLOCK_SECTION bflb_peripheral_clock_control_by_id(uint8_t peri, bool en
         case BFLB_PERIPHERAL_MM_MISC:
             bitop(&regval2, 16);
             break;
-        case BFLB_PERIPHERAL_PEC:
-            bitop(&regval2, 25);
-            break;
         default:
             return -1;
     }
@@ -416,9 +407,6 @@ int bflb_peripheral_clock_status_get_by_id(uint8_t peri)
             break;
         case BFLB_PERIPHERAL_MM_MISC:
             tmpval = (regval2 >> 16) & 0x01;
-            break;
-        case BFLB_PERIPHERAL_PEC:
-            tmpval = (regval2 >> 25) & 0x01;
             break;
         default:
             return -1;

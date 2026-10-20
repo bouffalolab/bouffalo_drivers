@@ -2211,14 +2211,6 @@ BL_Err_Type GLB_Set_DMA_CLK(uint8_t enable, uint8_t clk)
  *           @arg GLB_PERI_DMA_DBI_TX
  *           @arg GLB_PERI_DMA_AUADC_RX
  *           @arg GLB_PERI_DMA_DAC
- *           @arg GLB_PERI_DMA_PEC_SM0_RX
- *           @arg GLB_PERI_DMA_PEC_SM1_RX
- *           @arg GLB_PERI_DMA_PEC_SM2_RX
- *           @arg GLB_PERI_DMA_PEC_SM3_RX
- *           @arg GLB_PERI_DMA_PEC_SM0_TX
- *           @arg GLB_PERI_DMA_PEC_SM1_TX
- *           @arg GLB_PERI_DMA_PEC_SM2_TX
- *           @arg GLB_PERI_DMA_PEC_SM3_TX
  * @param  cn: cn, this parameter can be one of the following values:
  *           @arg GLB_PERI_DMA_CN_SEL_DMA0
  *           @arg GLB_PERI_DMA_CN_SEL_DMA1
@@ -2258,14 +2250,6 @@ BL_Err_Type GLB_Set_DMA_CLK(uint8_t enable, uint8_t clk)
  *           @arg GLB_PERI_DMA_SPI1_TX
  *           @arg GLB_PERI_DMA_SPI2_RX
  *           @arg GLB_PERI_DMA_SPI2_TX
- *           @arg GLB_PERI_DMA_PEC_SM0_TX
- *           @arg GLB_PERI_DMA_PEC_SM1_TX
- *           @arg GLB_PERI_DMA_PEC_SM2_TX
- *           @arg GLB_PERI_DMA_PEC_SM3_TX
- *           @arg GLB_PERI_DMA_PEC_SM0_RX
- *           @arg GLB_PERI_DMA_PEC_SM1_RX
- *           @arg GLB_PERI_DMA_PEC_SM2_RX
- *           @arg GLB_PERI_DMA_PEC_SM3_RX
  * @param  cn: cn, this parameter can be one of the following values:
  *           @arg GLB_PERI_DMA_CN_SEL_DMA0
  *           @arg GLB_PERI_DMA_CN_SEL_DMA1
@@ -2691,44 +2675,6 @@ BL_Err_Type GLB_SPI_Sig_Swap_Set(uint8_t group, uint8_t swap)
     tmpVal = BL_SET_REG_BITS_VAL(tmpVal, GLB_SPI_SWAP_SET, tmpVal2);
     BL_WR_REG(GLB_BASE, GLB_SPI_CFG0, tmpVal);
 
-    return SUCCESS;
-}
-
-/****************************************************************************/ /**
- * @brief  set PEC clock
- *
- * @param  enable: Enable or disable PEC clock
- * @param  clkSel: clock selection, this parameter can be one of the following values:
- *           @arg GLB_PEC_CLK_MUXPLL_160M
- *           @arg GLB_PEC_CLK_XCLK
- * @param  div: divider
- *
- * @return SUCCESS or ERROR
- *
-*******************************************************************************/
-BL_Err_Type GLB_Set_PEC_CLK(uint8_t enable, uint8_t clkSel, uint8_t div)
-{
-    uint32_t tmpVal = 0;
-
-    CHECK_PARAM(IS_GLB_PEC_CLK_TYPE(clkSel));
-    CHECK_PARAM((div <= 0x1F));
-
-    tmpVal = BL_RD_REG(GLB_BASE, GLB_PEC_CFG0);
-    tmpVal = BL_CLR_REG_BIT(tmpVal, GLB_PEC_CLK_EN);
-    BL_WR_REG(GLB_BASE, GLB_PEC_CFG0, tmpVal);
-
-    tmpVal = BL_RD_REG(GLB_BASE, GLB_PEC_CFG0);
-    tmpVal = BL_SET_REG_BITS_VAL(tmpVal, GLB_PEC_CLK_DIV, div);
-    tmpVal = BL_SET_REG_BITS_VAL(tmpVal, GLB_PEC_CLK_SEL, clkSel);
-    BL_WR_REG(GLB_BASE, GLB_PEC_CFG0, tmpVal);
-
-    tmpVal = BL_RD_REG(GLB_BASE, GLB_PEC_CFG0);
-    if (enable) {
-        tmpVal = BL_SET_REG_BIT(tmpVal, GLB_PEC_CLK_EN);
-    } else {
-        tmpVal = BL_CLR_REG_BIT(tmpVal, GLB_PEC_CLK_EN);
-    }
-    BL_WR_REG(GLB_BASE, GLB_PEC_CFG0, tmpVal);
     return SUCCESS;
 }
 

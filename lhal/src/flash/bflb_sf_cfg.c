@@ -1811,7 +1811,7 @@ __UNUSED static const ATTR_TCM_CONST_SECTION spi_flash_cfg_type flash_cfg_issi_2
     .time_e_32k = 500,
     .time_e_64k = 1000,
     .time_page_pgm = 5,
-    .time_ce = 65 * 1000,
+    .time_ce = 0x8000 | 180,
     .pd_delay = 5,
     .qe_data = 0,
 };

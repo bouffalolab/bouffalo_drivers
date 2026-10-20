@@ -180,7 +180,6 @@
 #define CKS_BASE   ((uint32_t)0x2001C000)
 #define DBI_BASE   ((uint32_t)0x2001D000)
 #define I2S_BASE   ((uint32_t)0x2001E000)
-#define PEC_BASE   ((uint32_t)0x2001F000)
 #if !defined(CPU_MODEL_A0)
 #define DMA1_BASE  ((uint32_t)0x20021000)
 #define AUDAC_BASE ((uint32_t)0x20022000)

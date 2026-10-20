@@ -212,7 +212,6 @@ uint32_t const romDriverTable[]={
     [ROM_API_INDEX_GLB_Set_I2S_CLK]                                            = (uint32_t)GLB_Set_I2S_CLK,
     [ROM_API_INDEX_GLB_Set_SPI0_2_CLK]                                         = (uint32_t)GLB_Set_SPI0_2_CLK,
     [ROM_API_INDEX_GLB_SPI_Sig_Swap_Set]                                       = (uint32_t)GLB_SPI_Sig_Swap_Set,
-    [ROM_API_INDEX_GLB_Set_PEC_CLK]                                            = (uint32_t)GLB_Set_PEC_CLK,
     [ROM_API_INDEX_GLB_Set_PWM1_IO_Sel]                                        = (uint32_t)GLB_Set_PWM1_IO_Sel,
     [ROM_API_INDEX_GLB_Set_PDM_IO_Sel]                                         = (uint32_t)GLB_Set_PDM_IO_Sel,
     [ROM_API_INDEX_GLB_Set_DBI_CLK]                                            = (uint32_t)GLB_Set_DBI_CLK,

@@ -8,10 +8,13 @@
 #include "bl618dg_xip_recovery.h"
 #include "tzc_sec_reg.h"
 #include "bl618dg_lp.h"
+#include "hardware/sf_ctrl_reg.h"
 
 static ATTR_NOCACHE_RAM_SECTION sf_recovery_para_t g_flash_para = { 0 };
 static ATTR_NOCACHE_RAM_SECTION lp_fw_sf_sec_t sf_sec_info = { 0 };
 static ATTR_NOCACHE_RAM_SECTION lp_fw_tzc_t tzc_info = { 0 };
+
+#define BL_LP_SF_AES_REGION(region) (SF_CTRL_BASE + SF_CTRL_AES_REGION_OFFSET + (region) * 0x80U)
 
 static inline uint8_t Clock_Get_SF_Clk_Sel_Val(void)
 {
@@ -91,66 +94,65 @@ static void bl_lp_sec_para_save(void)
 {
     iot2lp_para->sec_cfg = &sf_sec_info;
 
-    // uint32_t tmpVal;
-    // uint32_t regionRegBase = SF_Ctrl_Get_AES_Region(SF_CTRL_BASE, 0);
-    // uint32_t *iv = iot2lp_para->sec_cfg->r0_aes_iv;
+    uint32_t tmpVal;
+    uint8_t aes_enabled;
+    uint32_t region_reg_base = BL_LP_SF_AES_REGION(0);
+    uint32_t *iv = iot2lp_para->sec_cfg->r0_aes_iv;
 
-    // tmpVal = getreg32(SF_CTRL_BASE + SF_CTRL_SF_AES_OFFSET);
+    tmpVal = getreg32(SF_CTRL_BASE + SF_CTRL_SF_AES_OFFSET);
+    aes_enabled = !!(tmpVal & SF_CTRL_SF_AES_EN);
 
-    // if (((tmpVal >> SF_CTRL_SF_AES_BLK_MODE_POS) & 0x1) == 1) {
-    //     iot2lp_para->sec_cfg->xts_mode = 1;
-    // } else {
-    //     iot2lp_para->sec_cfg->xts_mode = 0;
-    // }
-    // iot2lp_para->sec_cfg->encrypt_type = BL_GET_REG_BITS_VAL(tmpVal, SF_CTRL_SF_AES_MODE);
+    /* Only snapshot active decryption regions; AES mode 0 is AES-128. */
+    iot2lp_para->sec_cfg->xts_mode = !!(tmpVal & SF_CTRL_SF_AES_BLK_MODE);
+    iot2lp_para->sec_cfg->encrypt_type = ((tmpVal & SF_CTRL_SF_AES_MODE_MASK) >> SF_CTRL_SF_AES_MODE_SHIFT);
 
-    // // AES_Region0
-    // regionRegBase = SF_Ctrl_Get_AES_Region(SF_CTRL_BASE, 0);
-    // tmpVal = BL_RD_WORD(regionRegBase + SF_CTRL_SF_AES_START_OFFSET);
-    // iot2lp_para->sec_cfg->r0_aes_en = BL_GET_REG_BITS_VAL(tmpVal, SF_CTRL_SF_AES_REGION_EN);
-    // iot2lp_para->sec_cfg->r0_aes_hw_key_en = BL_GET_REG_BITS_VAL(tmpVal, SF_CTRL_SF_AES_REGION_HW_KEY_EN);
-    // iot2lp_para->sec_cfg->r0_aes_lock = BL_GET_REG_BITS_VAL(tmpVal, SF_CTRL_SF_AES_REGION_LOCK);
-    // iot2lp_para->sec_cfg->r0_aes_start = BL_GET_REG_BITS_VAL(tmpVal, SF_CTRL_SF_AES_REGION_START) * 1024;
-    // tmpVal = BL_RD_WORD(regionRegBase + SF_CTRL_SF_AES_END_OFFSET);
-    // iot2lp_para->sec_cfg->r0_aes_end = BL_GET_REG_BITS_VAL(tmpVal, SF_CTRL_SF_AES_REGION_END) * 1024;
+    /* AES region 0 */
+    region_reg_base = BL_LP_SF_AES_REGION(0);
+    tmpVal = BL_RD_WORD(region_reg_base + SF_CTRL_SF_AES_START_OFFSET);
+    iot2lp_para->sec_cfg->r0_aes_en = aes_enabled && !!(tmpVal & SF_CTRL_SF_AES_REGION_EN);
+    iot2lp_para->sec_cfg->r0_aes_hw_key_en = !!(tmpVal & SF_CTRL_SF_AES_REGION_HW_KEY_EN);
+    iot2lp_para->sec_cfg->r0_aes_lock = !!(tmpVal & SF_CTRL_SF_AES_REGION_LOCK);
+    iot2lp_para->sec_cfg->r0_aes_start = ((tmpVal & SF_CTRL_SF_AES_REGION_START_MASK) >> SF_CTRL_SF_AES_REGION_START_SHIFT) * 1024;
+    tmpVal = BL_RD_WORD(region_reg_base + SF_CTRL_SF_AES_END_OFFSET);
+    iot2lp_para->sec_cfg->r0_aes_end = ((tmpVal & SF_CTRL_SF_AES_REGION_END_MASK) >> SF_CTRL_SF_AES_REGION_END_SHIFT) * 1024;
 
-    // iv = iot2lp_para->sec_cfg->r0_aes_iv;
-    // iv[0] = BL_RD_WORD(regionRegBase + SF_CTRL_SF_AES_IV_W0_OFFSET);
-    // iv[1] = BL_RD_WORD(regionRegBase + SF_CTRL_SF_AES_IV_W1_OFFSET);
-    // iv[2] = BL_RD_WORD(regionRegBase + SF_CTRL_SF_AES_IV_W2_OFFSET);
-    // iv[3] = BL_RD_WORD(regionRegBase + SF_CTRL_SF_AES_IV_W3_OFFSET);
+    iv = iot2lp_para->sec_cfg->r0_aes_iv;
+    iv[0] = BL_RD_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W0_OFFSET);
+    iv[1] = BL_RD_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W1_OFFSET);
+    iv[2] = BL_RD_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W2_OFFSET);
+    iv[3] = BL_RD_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W3_OFFSET);
 
-    // // AES_Region1
-    // regionRegBase = SF_Ctrl_Get_AES_Region(SF_CTRL_BASE, 1);
-    // tmpVal = BL_RD_WORD(regionRegBase + SF_CTRL_SF_AES_START_OFFSET);
-    // iot2lp_para->sec_cfg->r1_aes_en = BL_GET_REG_BITS_VAL(tmpVal, SF_CTRL_SF_AES_REGION_EN);
-    // iot2lp_para->sec_cfg->r1_aes_hw_key_en = BL_GET_REG_BITS_VAL(tmpVal, SF_CTRL_SF_AES_REGION_HW_KEY_EN);
-    // iot2lp_para->sec_cfg->r1_aes_lock = BL_GET_REG_BITS_VAL(tmpVal, SF_CTRL_SF_AES_REGION_LOCK);
-    // iot2lp_para->sec_cfg->r1_aes_start = BL_GET_REG_BITS_VAL(tmpVal, SF_CTRL_SF_AES_REGION_START) * 1024;
-    // tmpVal = BL_RD_WORD(regionRegBase + SF_CTRL_SF_AES_END_OFFSET);
-    // iot2lp_para->sec_cfg->r1_aes_end = BL_GET_REG_BITS_VAL(tmpVal, SF_CTRL_SF_AES_REGION_END) * 1024;
+    /* AES region 1 */
+    region_reg_base = BL_LP_SF_AES_REGION(1);
+    tmpVal = BL_RD_WORD(region_reg_base + SF_CTRL_SF_AES_START_OFFSET);
+    iot2lp_para->sec_cfg->r1_aes_en = aes_enabled && !!(tmpVal & SF_CTRL_SF_AES_REGION_EN);
+    iot2lp_para->sec_cfg->r1_aes_hw_key_en = !!(tmpVal & SF_CTRL_SF_AES_REGION_HW_KEY_EN);
+    iot2lp_para->sec_cfg->r1_aes_lock = !!(tmpVal & SF_CTRL_SF_AES_REGION_LOCK);
+    iot2lp_para->sec_cfg->r1_aes_start = ((tmpVal & SF_CTRL_SF_AES_REGION_START_MASK) >> SF_CTRL_SF_AES_REGION_START_SHIFT) * 1024;
+    tmpVal = BL_RD_WORD(region_reg_base + SF_CTRL_SF_AES_END_OFFSET);
+    iot2lp_para->sec_cfg->r1_aes_end = ((tmpVal & SF_CTRL_SF_AES_REGION_END_MASK) >> SF_CTRL_SF_AES_REGION_END_SHIFT) * 1024;
 
-    // iv = iot2lp_para->sec_cfg->r1_aes_iv;
-    // iv[0] = BL_RD_WORD(regionRegBase + SF_CTRL_SF_AES_IV_W0_OFFSET);
-    // iv[1] = BL_RD_WORD(regionRegBase + SF_CTRL_SF_AES_IV_W1_OFFSET);
-    // iv[2] = BL_RD_WORD(regionRegBase + SF_CTRL_SF_AES_IV_W2_OFFSET);
-    // iv[3] = BL_RD_WORD(regionRegBase + SF_CTRL_SF_AES_IV_W3_OFFSET);
+    iv = iot2lp_para->sec_cfg->r1_aes_iv;
+    iv[0] = BL_RD_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W0_OFFSET);
+    iv[1] = BL_RD_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W1_OFFSET);
+    iv[2] = BL_RD_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W2_OFFSET);
+    iv[3] = BL_RD_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W3_OFFSET);
 
-    // // AES_Region2
-    // regionRegBase = SF_Ctrl_Get_AES_Region(SF_CTRL_BASE, 2);
-    // tmpVal = BL_RD_WORD(regionRegBase + SF_CTRL_SF_AES_START_OFFSET);
-    // iot2lp_para->sec_cfg->r2_aes_en = BL_GET_REG_BITS_VAL(tmpVal, SF_CTRL_SF_AES_REGION_EN);
-    // iot2lp_para->sec_cfg->r2_aes_hw_key_en = BL_GET_REG_BITS_VAL(tmpVal, SF_CTRL_SF_AES_REGION_HW_KEY_EN);
-    // iot2lp_para->sec_cfg->r2_aes_lock = BL_GET_REG_BITS_VAL(tmpVal, SF_CTRL_SF_AES_REGION_LOCK);
-    // iot2lp_para->sec_cfg->r2_aes_start = BL_GET_REG_BITS_VAL(tmpVal, SF_CTRL_SF_AES_REGION_START) * 1024;
-    // tmpVal = BL_RD_WORD(regionRegBase + SF_CTRL_SF_AES_END_OFFSET);
-    // iot2lp_para->sec_cfg->r2_aes_end = BL_GET_REG_BITS_VAL(tmpVal, SF_CTRL_SF_AES_REGION_END) * 1024;
+    /* AES region 2 */
+    region_reg_base = BL_LP_SF_AES_REGION(2);
+    tmpVal = BL_RD_WORD(region_reg_base + SF_CTRL_SF_AES_START_OFFSET);
+    iot2lp_para->sec_cfg->r2_aes_en = aes_enabled && !!(tmpVal & SF_CTRL_SF_AES_REGION_EN);
+    iot2lp_para->sec_cfg->r2_aes_hw_key_en = !!(tmpVal & SF_CTRL_SF_AES_REGION_HW_KEY_EN);
+    iot2lp_para->sec_cfg->r2_aes_lock = !!(tmpVal & SF_CTRL_SF_AES_REGION_LOCK);
+    iot2lp_para->sec_cfg->r2_aes_start = ((tmpVal & SF_CTRL_SF_AES_REGION_START_MASK) >> SF_CTRL_SF_AES_REGION_START_SHIFT) * 1024;
+    tmpVal = BL_RD_WORD(region_reg_base + SF_CTRL_SF_AES_END_OFFSET);
+    iot2lp_para->sec_cfg->r2_aes_end = ((tmpVal & SF_CTRL_SF_AES_REGION_END_MASK) >> SF_CTRL_SF_AES_REGION_END_SHIFT) * 1024;
 
-    // iv = iot2lp_para->sec_cfg->r2_aes_iv;
-    // iv[0] = BL_RD_WORD(regionRegBase + SF_CTRL_SF_AES_IV_W0_OFFSET);
-    // iv[1] = BL_RD_WORD(regionRegBase + SF_CTRL_SF_AES_IV_W1_OFFSET);
-    // iv[2] = BL_RD_WORD(regionRegBase + SF_CTRL_SF_AES_IV_W2_OFFSET);
-    // iv[3] = BL_RD_WORD(regionRegBase + SF_CTRL_SF_AES_IV_W3_OFFSET);
+    iv = iot2lp_para->sec_cfg->r2_aes_iv;
+    iv[0] = BL_RD_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W0_OFFSET);
+    iv[1] = BL_RD_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W1_OFFSET);
+    iv[2] = BL_RD_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W2_OFFSET);
+    iv[3] = BL_RD_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W3_OFFSET);
 }
 
 void bl_lp_xip_para_save(void)
@@ -178,6 +180,88 @@ void bl_lp_xip_para_save(void)
 
     bl_lp_tzc_para_save();
     bl_lp_sec_para_save();
+}
+
+static void ATTR_TCM_SECTION bl_lp_sec_recovery(void)
+{
+    uint8_t encrypt_type = iot2lp_para->sec_cfg->encrypt_type;
+    uint8_t xts_mode = iot2lp_para->sec_cfg->xts_mode;
+    uint32_t region_reg_base = BL_LP_SF_AES_REGION(0);
+
+    if (xts_mode) {
+        bflb_sf_ctrl_disable_wrap_access(0);
+        bflb_sf_ctrl_aes_set_mode(SF_CTRL_AES_XTS_MODE);
+    } else {
+        bflb_sf_ctrl_disable_wrap_access(1);
+        bflb_sf_ctrl_aes_set_mode(SF_CTRL_AES_CTR_MODE);
+    }
+
+    /* Restore raw IV words (including image offset) before locking regions. */
+    /* AES region 0 */
+    if (iot2lp_para->sec_cfg->r0_aes_en) {
+        if (xts_mode) {
+            bflb_sf_ctrl_aes_xts_set_key_be(0, NULL, encrypt_type);
+        } else {
+            bflb_sf_ctrl_aes_set_key_be(0, NULL, encrypt_type);
+        }
+
+        region_reg_base = BL_LP_SF_AES_REGION(0);
+        BL_WR_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W0_OFFSET, iot2lp_para->sec_cfg->r0_aes_iv[0]);
+        BL_WR_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W1_OFFSET, iot2lp_para->sec_cfg->r0_aes_iv[1]);
+        BL_WR_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W2_OFFSET, iot2lp_para->sec_cfg->r0_aes_iv[2]);
+        BL_WR_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W3_OFFSET, iot2lp_para->sec_cfg->r0_aes_iv[3]);
+
+        bflb_sf_ctrl_aes_set_region(0, iot2lp_para->sec_cfg->r0_aes_en,
+                                   iot2lp_para->sec_cfg->r0_aes_hw_key_en,
+                                   iot2lp_para->sec_cfg->r0_aes_start,
+                                   iot2lp_para->sec_cfg->r0_aes_end,
+                                   iot2lp_para->sec_cfg->r0_aes_lock);
+    }
+
+    /* AES region 1 */
+    if (iot2lp_para->sec_cfg->r1_aes_en) {
+        if (xts_mode) {
+            bflb_sf_ctrl_aes_xts_set_key_be(1, NULL, encrypt_type);
+        } else {
+            bflb_sf_ctrl_aes_set_key_be(1, NULL, encrypt_type);
+        }
+
+        region_reg_base = BL_LP_SF_AES_REGION(1);
+        BL_WR_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W0_OFFSET, iot2lp_para->sec_cfg->r1_aes_iv[0]);
+        BL_WR_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W1_OFFSET, iot2lp_para->sec_cfg->r1_aes_iv[1]);
+        BL_WR_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W2_OFFSET, iot2lp_para->sec_cfg->r1_aes_iv[2]);
+        BL_WR_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W3_OFFSET, iot2lp_para->sec_cfg->r1_aes_iv[3]);
+
+        bflb_sf_ctrl_aes_set_region(1, iot2lp_para->sec_cfg->r1_aes_en,
+                                   iot2lp_para->sec_cfg->r1_aes_hw_key_en,
+                                   iot2lp_para->sec_cfg->r1_aes_start,
+                                   iot2lp_para->sec_cfg->r1_aes_end,
+                                   iot2lp_para->sec_cfg->r1_aes_lock);
+    }
+
+    /* AES region 2 */
+    if (iot2lp_para->sec_cfg->r2_aes_en) {
+        if (xts_mode) {
+            bflb_sf_ctrl_aes_xts_set_key_be(2, NULL, encrypt_type);
+        } else {
+            bflb_sf_ctrl_aes_set_key_be(2, NULL, encrypt_type);
+        }
+
+        region_reg_base = BL_LP_SF_AES_REGION(2);
+        BL_WR_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W0_OFFSET, iot2lp_para->sec_cfg->r2_aes_iv[0]);
+        BL_WR_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W1_OFFSET, iot2lp_para->sec_cfg->r2_aes_iv[1]);
+        BL_WR_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W2_OFFSET, iot2lp_para->sec_cfg->r2_aes_iv[2]);
+        BL_WR_WORD(region_reg_base + SF_CTRL_SF_AES_IV_W3_OFFSET, iot2lp_para->sec_cfg->r2_aes_iv[3]);
+
+        bflb_sf_ctrl_aes_set_region(2, iot2lp_para->sec_cfg->r2_aes_en,
+                                   iot2lp_para->sec_cfg->r2_aes_hw_key_en,
+                                   iot2lp_para->sec_cfg->r2_aes_start,
+                                   iot2lp_para->sec_cfg->r2_aes_end,
+                                   iot2lp_para->sec_cfg->r2_aes_lock);
+    }
+
+    bflb_sf_ctrl_aes_enable_be();
+    bflb_sf_ctrl_aes_enable();
 }
 
 static void ATTR_TCM_SECTION bl_lp_set_sf_ctrl(spi_flash_cfg_type *pFlashCfg)
@@ -245,11 +329,11 @@ void ATTR_TCM_SECTION bl_lp_flash_set_cmds(spi_flash_cfg_type *p_flash_cfg)
 
 void ATTR_TCM_SECTION bl_lp_xip_recovery(void)
 {
-    // uint32_t encrypted = 0;
     uint32_t jdec_id = 0;
     uint32_t timeout = 0;
     uint32_t tmp_val;
     uint32_t ret = 0;
+    lp_fw_sf_sec_t *sec_cfg = iot2lp_para->sec_cfg;
     sf_recovery_para_t *p_flash_para = (sf_recovery_para_t *)iot2lp_para->flash_parameter;
     spi_flash_cfg_type *pFlashCfg = (spi_flash_cfg_type *)p_flash_para->flash_cfg;
 
@@ -340,5 +424,12 @@ void ATTR_TCM_SECTION bl_lp_xip_recovery(void)
         arch_delay_us(10);
     } while (timeout < 1000 && tmp_val != 0x504e4642); /* BFNP */
 
-    bl_lp_xip_read_enable(pFlashCfg, 1 /* cont read*/, p_flash_para->flash_offset);
+    /* Restore Boot2's hardware-key, big-endian AES setup before XIP fetches. */
+    if (sec_cfg->r0_aes_en || sec_cfg->r1_aes_en || sec_cfg->r2_aes_en) {
+        bl_lp_sec_recovery();
+        bl_lp_xip_read_enable(pFlashCfg, 0 /* cont read */, p_flash_para->flash_offset);
+    } else {
+        bflb_sf_ctrl_aes_disable();
+        bl_lp_xip_read_enable(pFlashCfg, 1 /* cont read */, p_flash_para->flash_offset);
+    }
 }

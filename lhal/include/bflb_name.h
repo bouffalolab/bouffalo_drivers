@@ -96,12 +96,6 @@
 #define BFLB_NAME_GMAC1          "gmac1"
 /* and so on...*/
 
-#define BFLB_NAME_PEC_SM0        "pec_sm0"
-#define BFLB_NAME_PEC_SM1        "pec_sm1"
-#define BFLB_NAME_PEC_SM2        "pec_sm2"
-#define BFLB_NAME_PEC_SM3        "pec_sm3"
-/* and so on...*/
-
 #define BFLB_NAME_CAN0           "can0"
 #define BFLB_NAME_CAN1           "can1"
 #define BFLB_NAME_CAN2           "can2"

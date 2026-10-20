@@ -170,7 +170,6 @@ typedef enum {
     ROM_API_INDEX_GLB_Set_ETH_REF_O_CLK_Sel                         = 101,
     ROM_API_INDEX_GLB_Set_CAM_CLK                                   = 102,
     ROM_API_INDEX_GLB_Set_SDH_CLK                                   = 103,
-    ROM_API_INDEX_GLB_Set_PEC_CLK                                   = 104,
     ROM_API_INDEX_GLB_Set_AHB2QSPI_CLK                              = 105,
     ROM_API_INDEX_GLB_Config_SDIO_Host_Cmd0_Reset                   = 106,
     ROM_API_INDEX_GLB_Config_SDIO_Host_Reset_System                 = 107,
@@ -785,10 +784,6 @@ typedef enum {
 #define RomDriver_GLB_Set_SDH_CLK \
     ((BL_Err_Type (*)(uint8_t enable, uint8_t clkSel, uint8_t div)) \
     STD_ROM_APITABLE[ROM_API_INDEX_GLB_Set_SDH_CLK])
-
-#define RomDriver_GLB_Set_PEC_CLK \
-    ((BL_Err_Type (*)(uint8_t enable, uint8_t clkSel, uint8_t div)) \
-    STD_ROM_APITABLE[ROM_API_INDEX_GLB_Set_PEC_CLK])
 
 #define RomDriver_GLB_Set_AHB2QSPI_CLK \
     ((BL_Err_Type (*)(uint8_t enable, uint8_t div)) \

@@ -56,8 +56,6 @@
 #define BL616CL_IRQ_GPIO_DMA                          (BL616CL_IRQ_NUM_BASE + 31)
 #define BL616CL_IRQ_I2C0                              (BL616CL_IRQ_NUM_BASE + 32)
 #define BL616CL_IRQ_PWM                               (BL616CL_IRQ_NUM_BASE + 33)
-#define BL616CL_IRQ_PEC_INT0                          (BL616CL_IRQ_NUM_BASE + 34)
-#define BL616CL_IRQ_PEC_INT1                          (BL616CL_IRQ_NUM_BASE + 35)
 #define BL616CL_IRQ_TIMER0                            (BL616CL_IRQ_NUM_BASE + 36)
 #define BL616CL_IRQ_TIMER1                            (BL616CL_IRQ_NUM_BASE + 37)
 #define BL616CL_IRQ_WDG                               (BL616CL_IRQ_NUM_BASE + 38)
